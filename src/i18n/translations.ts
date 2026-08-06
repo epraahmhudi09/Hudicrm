@@ -116,6 +116,26 @@ export interface Translations {
   importButtonImporting: string;
   importButton: (n: number) => string;
   doneLabel: string;
+
+  fieldBundleExpiry: string;
+  fieldBundleExpiryHelper: string;
+  expiryBadgeExpired: string;
+  expiryBadgeDays: (n: number) => string;
+  statsExpiringSoon: string;
+  filterExpiring: string;
+
+  export: string;
+
+  actionHistory: string;
+  historyTitle: string;
+  historyEmpty: string;
+  addNote: string;
+  notePlaceholder: string;
+
+  activityCreated: string;
+  activityUpdated: string;
+  activityStatusChanged: (status: string) => string;
+  activityCalled: (phone: string) => string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -241,6 +261,26 @@ export const translations: Record<"en" | "so", Translations> = {
     importButtonImporting: "Importing...",
     importButton: (n) => `Import ${n} Customer${n === 1 ? "" : "s"}`,
     doneLabel: "Done",
+
+    fieldBundleExpiry: "Bundle Expiry",
+    fieldBundleExpiryHelper: "Optional. Used to flag upcoming or lapsed renewals.",
+    expiryBadgeExpired: "Expired",
+    expiryBadgeDays: (n) => (n === 0 ? "Expires today" : `Expires in ${n}d`),
+    statsExpiringSoon: "Expiring Soon",
+    filterExpiring: "Expiring Soon",
+
+    export: "Export",
+
+    actionHistory: "History",
+    historyTitle: "Customer History",
+    historyEmpty: "No activity yet.",
+    addNote: "Add Note",
+    notePlaceholder: "Write a note...",
+
+    activityCreated: "Customer created.",
+    activityUpdated: "Customer details updated.",
+    activityStatusChanged: (status) => `Status changed to ${status}.`,
+    activityCalled: (phone) => `Called ${phone}.`,
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -365,6 +405,26 @@ export const translations: Record<"en" | "so", Translations> = {
     importButtonImporting: "Waa la soo dejinayaa...",
     importButton: (n) => `Soo Deji ${n} Macmiil`,
     doneLabel: "Dhammaystir",
+
+    fieldBundleExpiry: "Dhicitaanka Bundle-ka",
+    fieldBundleExpiryHelper: "Ikhtiyaari. Waxaa loo isticmaalaa in lagu ogaado dib-u-cusboonaysiin soo socota ama dhacday.",
+    expiryBadgeExpired: "Way Dhacday",
+    expiryBadgeDays: (n) => (n === 0 ? "Maanta ayay dhacaysaa" : `${n} maalmood ayay ku dhacaysaa`),
+    statsExpiringSoon: "Dhawaan Dhici Doona",
+    filterExpiring: "Dhawaan Dhici Doona",
+
+    export: "Dejiso (Export)",
+
+    actionHistory: "Taariikhda",
+    historyTitle: "Taariikhda Macmiilka",
+    historyEmpty: "Weli wax dhaqdhaqaaq ah ma jiraan.",
+    addNote: "Ku Dar Qoraal",
+    notePlaceholder: "Qor faallo...",
+
+    activityCreated: "Macmiilka waa la abuuray.",
+    activityUpdated: "Macluumaadka macmiilka waa la cusboonaysiiyay.",
+    activityStatusChanged: (status) => `Xaaladda waxaa loo beddelay ${status}.`,
+    activityCalled: (phone) => `Waxaa la wacay ${phone}.`,
   },
 };
 

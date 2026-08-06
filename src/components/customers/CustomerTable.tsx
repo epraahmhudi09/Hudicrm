@@ -1,7 +1,8 @@
-import { Pencil, Trash2, Star, RefreshCw, Phone } from "lucide-react";
+import { Pencil, Trash2, Star, RefreshCw, Phone, History } from "lucide-react";
 import type { Customer } from "../../types/customer";
 import StatusBadge from "./StatusBadge";
 import CustomerCard from "./CustomerCard";
+import ExpiryBadge from "./ExpiryBadge";
 import { telHref } from "../../utils/phone";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -10,6 +11,8 @@ interface CustomerTableProps {
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
   onToggleStatus: (customer: Customer) => void;
+  onViewHistory: (customer: Customer) => void;
+  onCallLogged: (customer: Customer, phone: string) => void;
   togglingId: string | null;
 }
 
@@ -28,6 +31,8 @@ export default function CustomerTable({
   onEdit,
   onDelete,
   onToggleStatus,
+  onViewHistory,
+  onCallLogged,
   togglingId,
 }: CustomerTableProps) {
   const { t } = useLanguage();
@@ -54,6 +59,7 @@ export default function CustomerTable({
                   <td className="px-4 py-3">
                     <a
                       href={telHref(customer.mainPhone)}
+                      onClick={() => onCallLogged(customer, customer.mainPhone)}
                       className="flex items-center gap-1.5 text-ink-700 transition hover:text-amtel-600 hover:underline"
                     >
                       <Phone size={13} className="text-amtel-600" />
@@ -64,6 +70,7 @@ export default function CustomerTable({
                     {customer.backupPhone ? (
                       <a
                         href={telHref(customer.backupPhone)}
+                        onClick={() => onCallLogged(customer, customer.backupPhone)}
                         className="flex items-center gap-1.5 transition hover:text-amtel-600 hover:underline"
                       >
                         <Phone size={13} />
@@ -73,7 +80,12 @@ export default function CustomerTable({
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3 text-ink-700">{customer.bundle}</td>
+                  <td className="px-4 py-3 text-ink-700">
+                    <div className="flex flex-col gap-1">
+                      <span>{customer.bundle}</span>
+                      <ExpiryBadge bundleExpiry={customer.bundleExpiry} />
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={customer.status} />
                   </td>
@@ -93,6 +105,13 @@ export default function CustomerTable({
                         ) : (
                           <Star size={15} />
                         )}
+                      </button>
+                      <button
+                        onClick={() => onViewHistory(customer)}
+                        title={t.actionHistory}
+                        className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
+                      >
+                        <History size={15} />
                       </button>
                       <button
                         onClick={() => onEdit(customer)}
@@ -125,6 +144,8 @@ export default function CustomerTable({
             onEdit={onEdit}
             onDelete={onDelete}
             onToggleStatus={onToggleStatus}
+            onViewHistory={onViewHistory}
+            onCallLogged={onCallLogged}
           />
         ))}
       </div>

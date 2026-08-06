@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { Users, Star, UserCheck, TrendingUp } from "lucide-react";
+import { Users, Star, UserCheck, TrendingUp, Clock } from "lucide-react";
 import {
   ResponsiveContainer,
   PieChart,
@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import type { Customer } from "../../types/customer";
 import { useLanguage } from "../../context/LanguageContext";
+import { daysUntilExpiry } from "../customers/ExpiryBadge";
 
 interface StatsOverviewProps {
   customers: Customer[];
@@ -72,7 +73,12 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
       );
     }).length;
 
-    return { total, loyal, normal, newThisMonth };
+    const expiringSoon = customers.filter((c) => {
+      const days = daysUntilExpiry(c.bundleExpiry);
+      return days !== null && days >= 0 && days <= 7;
+    }).length;
+
+    return { total, loyal, normal, newThisMonth, expiringSoon };
   }, [customers]);
 
   const pieData = useMemo(
@@ -107,7 +113,7 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard
           label={t.totalCustomers}
           value={stats.total}
@@ -131,6 +137,12 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
           value={stats.newThisMonth}
           icon={<TrendingUp size={20} />}
           accent="#16a34a"
+        />
+        <StatCard
+          label={t.statsExpiringSoon}
+          value={stats.expiringSoon}
+          icon={<Clock size={20} />}
+          accent="#d97706"
         />
       </div>
 

@@ -14,12 +14,16 @@ import {
   addCustomer,
   deleteCustomer,
   getCustomersRealtime,
+  logActivity,
   toggleCustomerStatus,
   updateCustomer,
 } from "./services/customerService";
+import { daysUntilExpiry } from "./components/customers/ExpiryBadge";
+import { exportCustomersToExcel } from "./utils/spreadsheetExport";
 import type { Customer, CustomerFilter, CustomerFormData } from "./types/customer";
 
 const ImportCustomersModal = lazy(() => import("./components/customers/ImportCustomersModal"));
+const CustomerActivityModal = lazy(() => import("./components/customers/CustomerActivityModal"));
 
 function FullScreenLoader() {
   return (
@@ -28,6 +32,12 @@ function FullScreenLoader() {
     </div>
   );
 }
+
+const SuspenseModalFallback = (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50">
+    <Loader2 size={28} className="animate-spin text-white" />
+  </div>
+);
 
 function Dashboard() {
   const { t } = useLanguage();
@@ -41,6 +51,8 @@ function Dashboard() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [historyCustomer, setHistoryCustomer] = useState<Customer | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -65,7 +77,14 @@ function Dashboard() {
     const term = search.trim().toLowerCase();
 
     return customers.filter((customer) => {
-      const matchesFilter = filter === "all" || customer.status === filter;
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "expiring"
+          ? (() => {
+              const days = daysUntilExpiry(customer.bundleExpiry);
+              return days !== null && days <= 7;
+            })()
+          : customer.status === filter);
       if (!matchesFilter) return false;
 
       if (!term) return true;
@@ -90,8 +109,10 @@ function Dashboard() {
   async function handleFormSubmit(data: CustomerFormData, createdAt?: Date) {
     if (editingCustomer) {
       await updateCustomer(editingCustomer.id, data);
+      await logActivity(editingCustomer.id, "updated", t.activityUpdated);
     } else {
-      await addCustomer(data, createdAt);
+      const newId = await addCustomer(data, createdAt);
+      await logActivity(newId, "created", t.activityCreated);
     }
     setFormOpen(false);
     setEditingCustomer(null);
@@ -100,10 +121,16 @@ function Dashboard() {
   async function handleToggleStatus(customer: Customer) {
     setTogglingId(customer.id);
     try {
-      await toggleCustomerStatus(customer.id, customer.status);
+      const nextStatus = await toggleCustomerStatus(customer.id, customer.status);
+      const label = nextStatus === "loyal" ? t.statusLoyal : t.statusNormal;
+      await logActivity(customer.id, "status_change", t.activityStatusChanged(label));
     } finally {
       setTogglingId(null);
     }
+  }
+
+  function handleCallLogged(customer: Customer, phone: string) {
+    void logActivity(customer.id, "call", t.activityCalled(phone));
   }
 
   async function handleConfirmDelete() {
@@ -114,6 +141,15 @@ function Dashboard() {
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await exportCustomersToExcel(filteredCustomers);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -133,6 +169,8 @@ function Dashboard() {
           onFilterChange={setFilter}
           onAddCustomer={openAddForm}
           onImportCustomers={() => setImportOpen(true)}
+          onExportCustomers={() => void handleExport()}
+          exporting={exporting}
         />
 
         {loadingCustomers ? (
@@ -153,6 +191,8 @@ function Dashboard() {
             onEdit={openEditForm}
             onDelete={setDeleteTarget}
             onToggleStatus={handleToggleStatus}
+            onViewHistory={setHistoryCustomer}
+            onCallLogged={handleCallLogged}
             togglingId={togglingId}
           />
         )}
@@ -170,14 +210,17 @@ function Dashboard() {
       )}
 
       {importOpen && (
-        <Suspense
-          fallback={
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50">
-              <Loader2 size={28} className="animate-spin text-white" />
-            </div>
-          }
-        >
+        <Suspense fallback={SuspenseModalFallback}>
           <ImportCustomersModal onClose={() => setImportOpen(false)} />
+        </Suspense>
+      )}
+
+      {historyCustomer && (
+        <Suspense fallback={SuspenseModalFallback}>
+          <CustomerActivityModal
+            customer={historyCustomer}
+            onClose={() => setHistoryCustomer(null)}
+          />
         </Suspense>
       )}
 

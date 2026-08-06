@@ -12,8 +12,14 @@ import {
   writeBatch,
   type Unsubscribe,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import type { Customer, CustomerFormData, CustomerStatus } from "../types/customer";
+import { auth, db } from "../firebase";
+import type {
+  ActivityType,
+  Customer,
+  CustomerActivity,
+  CustomerFormData,
+  CustomerStatus,
+} from "../types/customer";
 
 const CUSTOMERS_COLLECTION = "customers";
 const customersRef = collection(db, CUSTOMERS_COLLECTION);
@@ -21,9 +27,21 @@ const customersRef = collection(db, CUSTOMERS_COLLECTION);
 // Firestore batched writes are capped at 500 operations; stay well under that.
 const BATCH_CHUNK_SIZE = 450;
 
+function bundleExpiryToTimestamp(value: string): Timestamp | null {
+  return value ? Timestamp.fromDate(new Date(`${value}T00:00:00`)) : null;
+}
+
+function toFirestoreCustomerData(data: CustomerFormData) {
+  const { bundleExpiry, ...rest } = data;
+  return {
+    ...rest,
+    bundleExpiry: bundleExpiryToTimestamp(bundleExpiry),
+  };
+}
+
 export async function addCustomer(data: CustomerFormData, createdAt?: Date): Promise<string> {
   const docRef = await addDoc(customersRef, {
-    ...data,
+    ...toFirestoreCustomerData(data),
     createdAt: createdAt ? Timestamp.fromDate(createdAt) : serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -46,7 +64,7 @@ export async function bulkAddCustomers(
     for (const row of chunk) {
       const newDocRef = doc(customersRef);
       batch.set(newDocRef, {
-        ...row.data,
+        ...toFirestoreCustomerData(row.data),
         createdAt: row.createdAt ? Timestamp.fromDate(row.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -84,11 +102,11 @@ export function getCustomersRealtime(
 
 export async function updateCustomer(
   id: string,
-  data: Partial<CustomerFormData>
+  data: CustomerFormData
 ): Promise<void> {
   const customerDoc = doc(db, CUSTOMERS_COLLECTION, id);
   await updateDoc(customerDoc, {
-    ...data,
+    ...toFirestoreCustomerData(data),
     updatedAt: serverTimestamp(),
   });
 }
@@ -96,16 +114,52 @@ export async function updateCustomer(
 export async function toggleCustomerStatus(
   id: string,
   currentStatus: CustomerStatus
-): Promise<void> {
+): Promise<CustomerStatus> {
   const nextStatus: CustomerStatus = currentStatus === "loyal" ? "normal" : "loyal";
   const customerDoc = doc(db, CUSTOMERS_COLLECTION, id);
   await updateDoc(customerDoc, {
     status: nextStatus,
     updatedAt: serverTimestamp(),
   });
+  return nextStatus;
 }
 
 export async function deleteCustomer(id: string): Promise<void> {
   const customerDoc = doc(db, CUSTOMERS_COLLECTION, id);
   await deleteDoc(customerDoc);
+}
+
+export async function logActivity(
+  customerId: string,
+  type: ActivityType,
+  message: string
+): Promise<void> {
+  const activitiesRef = collection(db, CUSTOMERS_COLLECTION, customerId, "activities");
+  await addDoc(activitiesRef, {
+    type,
+    message,
+    createdBy: auth.currentUser?.email ?? "unknown",
+    createdAt: serverTimestamp(),
+  });
+}
+
+export function getActivitiesRealtime(
+  customerId: string,
+  onData: (activities: CustomerActivity[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const activitiesRef = collection(db, CUSTOMERS_COLLECTION, customerId, "activities");
+  const q = query(activitiesRef, orderBy("createdAt", "desc"));
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const activities = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data({ serverTimestamps: "estimate" }),
+      })) as CustomerActivity[];
+      onData(activities);
+    },
+    (error) => onError?.(error)
+  );
 }

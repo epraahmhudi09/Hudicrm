@@ -1,4 +1,4 @@
-import { Search, Plus, ListFilter, Upload } from "lucide-react";
+import { Search, Plus, ListFilter, Upload, Download, Loader2 } from "lucide-react";
 import type { CustomerFilter } from "../../types/customer";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -9,6 +9,8 @@ interface SearchFilterBarProps {
   onFilterChange: (value: CustomerFilter) => void;
   onAddCustomer: () => void;
   onImportCustomers: () => void;
+  onExportCustomers: () => void;
+  exporting: boolean;
 }
 
 export default function SearchFilterBar({
@@ -18,6 +20,8 @@ export default function SearchFilterBar({
   onFilterChange,
   onAddCustomer,
   onImportCustomers,
+  onExportCustomers,
+  exporting,
 }: SearchFilterBarProps) {
   const { t } = useLanguage();
   return (
@@ -50,11 +54,20 @@ export default function SearchFilterBar({
             <option value="all">{t.filterAll}</option>
             <option value="loyal">{t.filterLoyalOnly}</option>
             <option value="normal">{t.filterNormalOnly}</option>
+            <option value="expiring">{t.filterExpiring}</option>
           </select>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={onExportCustomers}
+          disabled={exporting}
+          title={t.export}
+          className="flex items-center justify-center gap-2 rounded-lg border border-ink-300 bg-white px-3 py-2.5 text-sm font-semibold text-ink-700 shadow-sm transition hover:bg-ink-100 disabled:opacity-60"
+        >
+          {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+        </button>
         <button
           onClick={onImportCustomers}
           className="flex items-center justify-center gap-2 rounded-lg border border-ink-300 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 shadow-sm transition hover:bg-ink-100"

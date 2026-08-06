@@ -41,6 +41,9 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
         backupPhone: customer.backupPhone,
         bundle: customer.bundle,
         status: customer.status,
+        bundleExpiry: customer.bundleExpiry
+          ? customer.bundleExpiry.toDate().toISOString().slice(0, 10)
+          : "",
       });
     } else {
       setForm(EMPTY_CUSTOMER_FORM);
@@ -91,6 +94,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
           backupPhone: form.backupPhone.trim(),
           bundle: form.bundle.trim(),
           status: form.status,
+          bundleExpiry: form.bundleExpiry,
         },
         customData
       );
@@ -221,6 +225,20 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
                 onClick={() => update("status", "loyal" as CustomerStatus)}
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="bundleExpiry" className="mb-1.5 block text-sm font-medium text-ink-700">
+              {t.fieldBundleExpiry}
+            </label>
+            <input
+              id="bundleExpiry"
+              type="date"
+              value={form.bundleExpiry}
+              onChange={(e) => update("bundleExpiry", e.target.value)}
+              className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+            />
+            <p className="mt-1 text-xs text-ink-500">{t.fieldBundleExpiryHelper}</p>
           </div>
 
           {!isEdit && (

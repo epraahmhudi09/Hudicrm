@@ -1,6 +1,7 @@
-import { Pencil, Trash2, Star, Phone, PhoneCall } from "lucide-react";
+import { Pencil, Trash2, Star, Phone, PhoneCall, History } from "lucide-react";
 import type { Customer } from "../../types/customer";
 import StatusBadge from "./StatusBadge";
+import ExpiryBadge from "./ExpiryBadge";
 import { telHref } from "../../utils/phone";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -9,6 +10,8 @@ interface CustomerCardProps {
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
   onToggleStatus: (customer: Customer) => void;
+  onViewHistory: (customer: Customer) => void;
+  onCallLogged: (customer: Customer, phone: string) => void;
 }
 
 export default function CustomerCard({
@@ -16,6 +19,8 @@ export default function CustomerCard({
   onEdit,
   onDelete,
   onToggleStatus,
+  onViewHistory,
+  onCallLogged,
 }: CustomerCardProps) {
   const { t } = useLanguage();
   return (
@@ -23,7 +28,10 @@ export default function CustomerCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-semibold text-ink-900">{customer.name}</p>
-          <p className="mt-0.5 text-xs text-ink-500">{customer.bundle}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-ink-500">{customer.bundle}</span>
+            <ExpiryBadge bundleExpiry={customer.bundleExpiry} />
+          </div>
         </div>
         <StatusBadge status={customer.status} />
       </div>
@@ -31,7 +39,10 @@ export default function CustomerCard({
       <div className="mt-3 space-y-1.5 text-sm">
         <a
           href={telHref(customer.mainPhone)}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCallLogged(customer, customer.mainPhone);
+          }}
           className="flex items-center gap-2 text-ink-700 transition hover:text-amtel-600"
         >
           <Phone size={14} className="text-amtel-600" />
@@ -40,7 +51,10 @@ export default function CustomerCard({
         {customer.backupPhone && (
           <a
             href={telHref(customer.backupPhone)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCallLogged(customer, customer.backupPhone);
+            }}
             className="flex items-center gap-2 text-ink-500 transition hover:text-amtel-600"
           >
             <PhoneCall size={14} />
@@ -49,7 +63,7 @@ export default function CustomerCard({
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-end gap-1 border-t border-ink-100 pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t border-ink-100 pt-3">
         <button
           onClick={() => onToggleStatus(customer)}
           title={customer.status === "loyal" ? t.actionMarkNormal : t.actionMarkLoyal}
@@ -57,6 +71,13 @@ export default function CustomerCard({
         >
           <Star size={14} />
           {t.actionToggle}
+        </button>
+        <button
+          onClick={() => onViewHistory(customer)}
+          title={t.actionHistory}
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-600 transition hover:bg-ink-100"
+        >
+          <History size={14} />
         </button>
         <button
           onClick={() => onEdit(customer)}

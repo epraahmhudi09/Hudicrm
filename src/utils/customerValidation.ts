@@ -56,6 +56,7 @@ export function validateCustomerRow(input: CustomerRowInput): ValidatedCustomerR
       backupPhone,
       bundle,
       status: normalizeStatus(input.status),
+      bundleExpiry: "",
     },
     createdAt: parseRowDate(input.createdAt),
     errors,
