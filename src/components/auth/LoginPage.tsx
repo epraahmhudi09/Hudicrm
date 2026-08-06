@@ -1,31 +1,34 @@
 import { useState, type FormEvent } from "react";
 import { LogIn, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
+import type { Translations } from "../../i18n/translations";
 import Logo from "../layout/Logo";
 
-function friendlyAuthError(code: string): string {
+function friendlyAuthError(code: string, t: Translations): string {
   switch (code) {
     case "auth/invalid-email":
-      return "That email address doesn't look right.";
+      return t.authErrorInvalidEmail;
     case "auth/user-disabled":
-      return "This account has been disabled.";
+      return t.authErrorUserDisabled;
     case "auth/user-not-found":
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Incorrect email or password.";
+      return t.authErrorWrongCredentials;
     case "auth/too-many-requests":
-      return "Too many attempts. Please wait a moment and try again.";
+      return t.authErrorTooManyRequests;
     case "auth/configuration-not-found":
-      return "Email/Password sign-in isn't enabled for this Firebase project yet. Enable it in the Firebase Console under Authentication → Sign-in method.";
+      return t.authErrorConfigNotFound;
     case "auth/network-request-failed":
-      return "Network error. Check your connection and try again.";
+      return t.authErrorNetwork;
     default:
-      return "Sign in failed. Please try again.";
+      return t.authErrorGeneric;
   }
 }
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +43,7 @@ export default function LoginPage() {
       await login(email.trim(), password);
     } catch (err) {
       const code = (err as { code?: string }).code ?? "";
-      setError(friendlyAuthError(code));
+      setError(friendlyAuthError(code, t));
     } finally {
       setSubmitting(false);
     }
@@ -60,30 +63,24 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Logo variant="light" className="scale-125 origin-left" />
           <div className="max-w-md">
-            <h1 className="text-3xl font-bold leading-tight mb-3">
-              Manage every customer relationship in one place.
-            </h1>
-            <p className="text-white/80">
-              Track subscriptions, loyalty status, and contact details for
-              every Amtel customer — in real time.
-            </p>
+            <h1 className="text-3xl font-bold leading-tight mb-3">{t.loginHeroTitle}</h1>
+            <p className="text-white/80">{t.loginHeroSubtitle}</p>
           </div>
-          <p className="text-xs text-white/60">
-            &copy; {new Date().getFullYear()} Amtel. All rights reserved.
-          </p>
+          <p className="text-xs text-white/60">{t.loginCopyright(new Date().getFullYear())}</p>
         </div>
       </div>
 
       <div className="flex flex-1 items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden mb-8 flex justify-center">
-            <Logo variant="dark" />
+          <div className="flex items-center justify-between lg:justify-end mb-8">
+            <div className="lg:hidden flex justify-center flex-1">
+              <Logo variant="dark" />
+            </div>
+            <LanguageToggle />
           </div>
 
-          <h2 className="text-2xl font-bold text-ink-900">Welcome back</h2>
-          <p className="text-sm text-ink-500 mt-1 mb-8">
-            Sign in to access the Amtel CRM dashboard.
-          </p>
+          <h2 className="text-2xl font-bold text-ink-900">{t.welcomeBack}</h2>
+          <p className="text-sm text-ink-500 mt-1 mb-8">{t.signInSubtitle}</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -91,7 +88,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-ink-700 mb-1.5"
               >
-                Email address
+                {t.emailAddress}
               </label>
               <input
                 id="email"
@@ -110,7 +107,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-ink-700 mb-1.5"
               >
-                Password
+                {t.password}
               </label>
               <div className="relative">
                 <input
@@ -152,15 +149,39 @@ export default function LoginPage() {
               ) : (
                 <LogIn size={16} />
               )}
-              {submitting ? "Signing in..." : "Sign in"}
+              {submitting ? t.signingIn : t.signIn}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-xs text-ink-500">
-            Access is restricted to authorized Amtel staff.
-          </p>
+          <p className="mt-8 text-center text-xs text-ink-500">{t.accessRestricted}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LanguageToggle() {
+  const { language, setLanguage } = useLanguage();
+  return (
+    <div className="flex rounded-lg border border-ink-300 p-0.5 text-xs font-medium">
+      <button
+        type="button"
+        onClick={() => setLanguage("so")}
+        className={`rounded-md px-2 py-1 transition ${
+          language === "so" ? "bg-amtel-600 text-white" : "text-ink-500"
+        }`}
+      >
+        SO
+      </button>
+      <button
+        type="button"
+        onClick={() => setLanguage("en")}
+        className={`rounded-md px-2 py-1 transition ${
+          language === "en" ? "bg-amtel-600 text-white" : "text-ink-500"
+        }`}
+      >
+        EN
+      </button>
     </div>
   );
 }

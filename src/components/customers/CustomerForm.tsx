@@ -3,6 +3,7 @@ import { X, Loader2, Star, UserCheck } from "lucide-react";
 import type { Customer, CustomerFormData, CustomerStatus } from "../../types/customer";
 import { EMPTY_CUSTOMER_FORM } from "../../types/customer";
 import { PHONE_PATTERN } from "../../utils/customerValidation";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface CustomerFormProps {
   customer: Customer | null;
@@ -24,6 +25,7 @@ function todayInputValue(): string {
 }
 
 export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFormProps) {
+  const { t } = useLanguage();
   const isEdit = Boolean(customer);
   const [form, setForm] = useState<CustomerFormData>(EMPTY_CUSTOMER_FORM);
   const [createdDate, setCreatedDate] = useState<string>(todayInputValue());
@@ -51,19 +53,19 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
   function validate(): boolean {
     const next: FieldErrors = {};
 
-    if (!form.name.trim()) next.name = "Name is required.";
+    if (!form.name.trim()) next.name = t.nameRequired;
 
     if (!form.mainPhone.trim()) {
-      next.mainPhone = "Main phone is required.";
+      next.mainPhone = t.mainPhoneRequired;
     } else if (!PHONE_PATTERN.test(form.mainPhone.trim())) {
-      next.mainPhone = "Enter a valid phone number.";
+      next.mainPhone = t.phoneInvalid;
     }
 
     if (form.backupPhone.trim() && !PHONE_PATTERN.test(form.backupPhone.trim())) {
-      next.backupPhone = "Enter a valid phone number.";
+      next.backupPhone = t.phoneInvalid;
     }
 
-    if (!form.bundle.trim()) next.bundle = "Bundle / plan is required.";
+    if (!form.bundle.trim()) next.bundle = t.bundleRequired;
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -109,7 +111,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
       >
         <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
           <h2 className="text-lg font-semibold text-ink-900">
-            {isEdit ? "Edit Customer" : "Add Customer"}
+            {isEdit ? t.editCustomer : t.addCustomer}
           </h2>
           <button
             onClick={onClose}
@@ -123,14 +125,14 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
         <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5">
           <div>
             <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-ink-700">
-              Name <span className="text-amtel-600">*</span>
+              {t.fieldName} <span className="text-amtel-600">*</span>
             </label>
             <input
               id="name"
               type="text"
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
-              placeholder="e.g. John Doe"
+              placeholder={t.fieldNamePlaceholder}
               className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
                 errors.name
                   ? "border-amtel-400 focus:border-amtel-500 focus:ring-amtel-500/20"
@@ -143,14 +145,14 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="mainPhone" className="mb-1.5 block text-sm font-medium text-ink-700">
-                Main Phone <span className="text-amtel-600">*</span>
+                {t.fieldMainPhone} <span className="text-amtel-600">*</span>
               </label>
               <input
                 id="mainPhone"
                 type="tel"
                 value={form.mainPhone}
                 onChange={(e) => update("mainPhone", e.target.value)}
-                placeholder="+1 555 123 4567"
+                placeholder={t.fieldMainPhonePlaceholder}
                 className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
                   errors.mainPhone
                     ? "border-amtel-400 focus:border-amtel-500 focus:ring-amtel-500/20"
@@ -164,14 +166,14 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
 
             <div>
               <label htmlFor="backupPhone" className="mb-1.5 block text-sm font-medium text-ink-700">
-                Backup Phone
+                {t.fieldBackupPhone}
               </label>
               <input
                 id="backupPhone"
                 type="tel"
                 value={form.backupPhone}
                 onChange={(e) => update("backupPhone", e.target.value)}
-                placeholder="Optional"
+                placeholder={t.fieldBackupPhonePlaceholder}
                 className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
                   errors.backupPhone
                     ? "border-amtel-400 focus:border-amtel-500 focus:ring-amtel-500/20"
@@ -186,14 +188,14 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
 
           <div>
             <label htmlFor="bundle" className="mb-1.5 block text-sm font-medium text-ink-700">
-              Bundle / Plan <span className="text-amtel-600">*</span>
+              {t.fieldBundle} <span className="text-amtel-600">*</span>
             </label>
             <input
               id="bundle"
               type="text"
               value={form.bundle}
               onChange={(e) => update("bundle", e.target.value)}
-              placeholder="e.g. Monthly 20GB, VIP Pro"
+              placeholder={t.fieldBundlePlaceholder}
               className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
                 errors.bundle
                   ? "border-amtel-400 focus:border-amtel-500 focus:ring-amtel-500/20"
@@ -204,18 +206,18 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
           </div>
 
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-ink-700">Status</span>
+            <span className="mb-1.5 block text-sm font-medium text-ink-700">{t.fieldStatus}</span>
             <div className="grid grid-cols-2 gap-2">
               <StatusOption
                 active={form.status === "normal"}
                 icon={<UserCheck size={15} />}
-                label="Normal"
+                label={t.statusNormal}
                 onClick={() => update("status", "normal" as CustomerStatus)}
               />
               <StatusOption
                 active={form.status === "loyal"}
                 icon={<Star size={15} />}
-                label="Loyal"
+                label={t.statusLoyal}
                 onClick={() => update("status", "loyal" as CustomerStatus)}
               />
             </div>
@@ -224,7 +226,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
           {!isEdit && (
             <div>
               <label htmlFor="createdDate" className="mb-1.5 block text-sm font-medium text-ink-700">
-                Created Date
+                {t.fieldCreatedDate}
               </label>
               <input
                 id="createdDate"
@@ -234,9 +236,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
                 onChange={(e) => setCreatedDate(e.target.value)}
                 className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
               />
-              <p className="mt-1 text-xs text-ink-500">
-                Defaults to today. Backdate this for historical or imported records.
-              </p>
+              <p className="mt-1 text-xs text-ink-500">{t.fieldCreatedDateHelper}</p>
             </div>
           )}
 
@@ -253,7 +253,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
               disabled={submitting}
               className="rounded-lg px-4 py-2.5 text-sm font-medium text-ink-700 transition hover:bg-ink-100 disabled:opacity-60"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               type="submit"
@@ -261,7 +261,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
               className="flex items-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
-              {isEdit ? "Save Changes" : "Add Customer"}
+              {isEdit ? t.saveChanges : t.addCustomer}
             </button>
           </div>
         </form>

@@ -1,4 +1,5 @@
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface ConfirmDialogProps {
   title: string;
@@ -12,11 +13,12 @@ interface ConfirmDialogProps {
 export default function ConfirmDialog({
   title,
   message,
-  confirmLabel = "Delete",
+  confirmLabel,
   loading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useLanguage();
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4"
@@ -42,7 +44,7 @@ export default function ConfirmDialog({
             disabled={loading}
             className="rounded-lg px-3.5 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-100 disabled:opacity-60"
           >
-            Cancel
+            {t.cancel}
           </button>
           <button
             onClick={onConfirm}
@@ -50,7 +52,7 @@ export default function ConfirmDialog({
             className="flex items-center gap-2 rounded-lg bg-amtel-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
-            {confirmLabel}
+            {confirmLabel ?? t.delete}
           </button>
         </div>
       </div>

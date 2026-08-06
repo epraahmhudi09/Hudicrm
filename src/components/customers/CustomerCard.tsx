@@ -1,6 +1,8 @@
 import { Pencil, Trash2, Star, Phone, PhoneCall } from "lucide-react";
 import type { Customer } from "../../types/customer";
 import StatusBadge from "./StatusBadge";
+import { telHref } from "../../utils/phone";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface CustomerCardProps {
   customer: Customer;
@@ -15,6 +17,7 @@ export default function CustomerCard({
   onDelete,
   onToggleStatus,
 }: CustomerCardProps) {
+  const { t } = useLanguage();
   return (
     <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -25,43 +28,51 @@ export default function CustomerCard({
         <StatusBadge status={customer.status} />
       </div>
 
-      <div className="mt-3 space-y-1.5 text-sm text-ink-700">
-        <div className="flex items-center gap-2">
-          <Phone size={14} className="text-ink-500" />
-          <span>{customer.mainPhone}</span>
-        </div>
+      <div className="mt-3 space-y-1.5 text-sm">
+        <a
+          href={telHref(customer.mainPhone)}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-2 text-ink-700 transition hover:text-amtel-600"
+        >
+          <Phone size={14} className="text-amtel-600" />
+          <span className="underline-offset-2 hover:underline">{customer.mainPhone}</span>
+        </a>
         {customer.backupPhone && (
-          <div className="flex items-center gap-2 text-ink-500">
+          <a
+            href={telHref(customer.backupPhone)}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2 text-ink-500 transition hover:text-amtel-600"
+          >
             <PhoneCall size={14} />
-            <span>{customer.backupPhone}</span>
-          </div>
+            <span className="underline-offset-2 hover:underline">{customer.backupPhone}</span>
+          </a>
         )}
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-1 border-t border-ink-100 pt-3">
         <button
           onClick={() => onToggleStatus(customer)}
-          title={customer.status === "loyal" ? "Mark as Normal" : "Mark as Loyal"}
+          title={customer.status === "loyal" ? t.actionMarkNormal : t.actionMarkLoyal}
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-600 transition hover:bg-ink-100"
         >
           <Star size={14} />
-          Toggle
+          {t.actionToggle}
         </button>
         <button
           onClick={() => onEdit(customer)}
-          title="Edit"
+          title={t.actionEdit}
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-600 transition hover:bg-ink-100"
         >
           <Pencil size={14} />
-          Edit
+          {t.actionEdit}
         </button>
         <button
           onClick={() => onDelete(customer)}
-          title="Delete"
+          title={t.actionDelete}
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-amtel-600 transition hover:bg-amtel-50"
         >
           <Trash2 size={14} />
-          Delete
+          {t.actionDelete}
         </button>
       </div>
     </div>

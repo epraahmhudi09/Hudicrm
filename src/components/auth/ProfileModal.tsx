@@ -16,6 +16,7 @@ import {
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { resizeImageToDataUrl } from "../../utils/imageResize";
 
 interface ProfileModalProps {
@@ -42,6 +43,7 @@ type SectionStatus = "idle" | "saving" | "success" | "error";
 
 export default function ProfileModal({ onClose }: ProfileModalProps) {
   const { user, profilePhoto, refreshUser } = useAuth();
+  const { t } = useLanguage();
 
   const [name, setName] = useState(user?.displayName ?? "");
   const [nameStatus, setNameStatus] = useState<SectionStatus>("idle");
@@ -138,7 +140,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-          <h2 className="text-lg font-semibold text-ink-900">Edit Profile</h2>
+          <h2 className="text-lg font-semibold text-ink-900">{t.editProfileTitle}</h2>
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
@@ -175,12 +177,12 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             </div>
             {avatarStatus === "saving" && (
               <p className="flex items-center gap-1.5 text-xs text-ink-500">
-                <Loader2 size={12} className="animate-spin" /> Uploading...
+                <Loader2 size={12} className="animate-spin" /> {t.uploading}
               </p>
             )}
             {avatarStatus === "success" && (
               <p className="flex items-center gap-1.5 text-xs text-green-600">
-                <Check size={12} /> Avatar updated
+                <Check size={12} /> {t.avatarUpdated}
               </p>
             )}
             {avatarError && <p className="text-xs text-amtel-600">{avatarError}</p>}
@@ -189,7 +191,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
           {/* Display name */}
           <form onSubmit={handleSaveName} className="space-y-2 border-t border-ink-100 pt-5">
             <label htmlFor="displayName" className="block text-sm font-medium text-ink-700">
-              Display Name
+              {t.displayName}
             </label>
             <div className="flex gap-2">
               <input
@@ -197,7 +199,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t.yourName}
                 className="flex-1 rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
               />
               <button
@@ -206,12 +208,12 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                 className="flex items-center gap-1.5 rounded-lg bg-amtel-600 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {nameStatus === "saving" && <Loader2 size={14} className="animate-spin" />}
-                Save
+                {t.save}
               </button>
             </div>
             {nameStatus === "success" && (
               <p className="flex items-center gap-1.5 text-xs text-green-600">
-                <Check size={12} /> Name updated
+                <Check size={12} /> {t.nameUpdated}
               </p>
             )}
             {nameError && (
@@ -223,13 +225,13 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
 
           {/* Change password */}
           <form onSubmit={handleChangePassword} className="space-y-3 border-t border-ink-100 pt-5">
-            <p className="text-sm font-medium text-ink-700">Change Password</p>
+            <p className="text-sm font-medium text-ink-700">{t.changePassword}</p>
 
             <input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Current password"
+              placeholder={t.currentPassword}
               autoComplete="current-password"
               className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
             />
@@ -237,7 +239,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New password (min. 6 characters)"
+              placeholder={t.newPassword}
               autoComplete="new-password"
               className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
             />
@@ -245,7 +247,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
+              placeholder={t.confirmNewPassword}
               autoComplete="new-password"
               className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
             />
@@ -256,12 +258,12 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {passwordStatus === "saving" && <Loader2 size={14} className="animate-spin" />}
-              Update Password
+              {t.updatePassword}
             </button>
 
             {passwordStatus === "success" && (
               <p className="flex items-center gap-1.5 text-xs text-green-600">
-                <Check size={12} /> Password updated
+                <Check size={12} /> {t.passwordUpdated}
               </p>
             )}
             {passwordError && (

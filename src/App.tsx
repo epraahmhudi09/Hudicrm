@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
+import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
 import StatsOverview from "./components/dashboard/StatsOverview";
@@ -29,6 +30,7 @@ function FullScreenLoader() {
 }
 
 function Dashboard() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -140,7 +142,7 @@ function Dashboard() {
         ) : loadError ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-amtel-200 bg-amtel-50 py-16 text-center">
             <AlertTriangle size={22} className="text-amtel-600" />
-            <p className="font-medium text-amtel-700">Couldn't load customers</p>
+            <p className="font-medium text-amtel-700">{t.couldntLoadCustomers}</p>
             <p className="max-w-sm text-sm text-amtel-600">{loadError}</p>
           </div>
         ) : filteredCustomers.length === 0 ? (
@@ -181,9 +183,9 @@ function Dashboard() {
 
       {deleteTarget && (
         <ConfirmDialog
-          title="Delete customer?"
-          message={`This will permanently remove "${deleteTarget.name}" from your customer list. This action cannot be undone.`}
-          confirmLabel="Delete"
+          title={t.deleteCustomerTitle}
+          message={t.deleteCustomerMessage(deleteTarget.name)}
+          confirmLabel={t.delete}
           loading={deleting}
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeleteTarget(null)}

@@ -1,7 +1,9 @@
-import { Pencil, Trash2, Star, RefreshCw } from "lucide-react";
+import { Pencil, Trash2, Star, RefreshCw, Phone } from "lucide-react";
 import type { Customer } from "../../types/customer";
 import StatusBadge from "./StatusBadge";
 import CustomerCard from "./CustomerCard";
+import { telHref } from "../../utils/phone";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -28,6 +30,7 @@ export default function CustomerTable({
   onToggleStatus,
   togglingId,
 }: CustomerTableProps) {
+  const { t } = useLanguage();
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border border-ink-100 bg-white shadow-sm md:block">
@@ -35,21 +38,41 @@ export default function CustomerTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-100/60 text-left text-xs font-semibold uppercase tracking-wide text-ink-500">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Main Phone</th>
-                <th className="px-4 py-3">Backup Phone</th>
-                <th className="px-4 py-3">Bundle</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Created</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{t.colName}</th>
+                <th className="px-4 py-3">{t.colMainPhone}</th>
+                <th className="px-4 py-3">{t.colBackupPhone}</th>
+                <th className="px-4 py-3">{t.colBundle}</th>
+                <th className="px-4 py-3">{t.colStatus}</th>
+                <th className="px-4 py-3">{t.colCreated}</th>
+                <th className="px-4 py-3 text-right">{t.colActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {customers.map((customer) => (
                 <tr key={customer.id} className="transition hover:bg-ink-100/40">
                   <td className="px-4 py-3 font-medium text-ink-900">{customer.name}</td>
-                  <td className="px-4 py-3 text-ink-700">{customer.mainPhone}</td>
-                  <td className="px-4 py-3 text-ink-500">{customer.backupPhone || "—"}</td>
+                  <td className="px-4 py-3">
+                    <a
+                      href={telHref(customer.mainPhone)}
+                      className="flex items-center gap-1.5 text-ink-700 transition hover:text-amtel-600 hover:underline"
+                    >
+                      <Phone size={13} className="text-amtel-600" />
+                      {customer.mainPhone}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3 text-ink-500">
+                    {customer.backupPhone ? (
+                      <a
+                        href={telHref(customer.backupPhone)}
+                        className="flex items-center gap-1.5 transition hover:text-amtel-600 hover:underline"
+                      >
+                        <Phone size={13} />
+                        {customer.backupPhone}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-ink-700">{customer.bundle}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={customer.status} />
@@ -62,7 +85,7 @@ export default function CustomerTable({
                       <button
                         onClick={() => onToggleStatus(customer)}
                         disabled={togglingId === customer.id}
-                        title={customer.status === "loyal" ? "Mark as Normal" : "Mark as Loyal"}
+                        title={customer.status === "loyal" ? t.actionMarkNormal : t.actionMarkLoyal}
                         className="rounded-lg p-1.5 text-ink-500 transition hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50"
                       >
                         {togglingId === customer.id ? (
@@ -73,14 +96,14 @@ export default function CustomerTable({
                       </button>
                       <button
                         onClick={() => onEdit(customer)}
-                        title="Edit"
+                        title={t.actionEdit}
                         className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => onDelete(customer)}
-                        title="Delete"
+                        title={t.actionDelete}
                         className="rounded-lg p-1.5 text-ink-500 transition hover:bg-amtel-50 hover:text-amtel-600"
                       >
                         <Trash2 size={15} />

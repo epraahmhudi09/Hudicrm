@@ -14,6 +14,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { Customer } from "../../types/customer";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface StatsOverviewProps {
   customers: Customer[];
@@ -54,6 +55,8 @@ function monthLabel(date: Date): string {
 }
 
 export default function StatsOverview({ customers }: StatsOverviewProps) {
+  const { t } = useLanguage();
+
   const stats = useMemo(() => {
     const total = customers.length;
     const loyal = customers.filter((c) => c.status === "loyal").length;
@@ -74,10 +77,10 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
 
   const pieData = useMemo(
     () => [
-      { name: "Loyal", value: stats.loyal },
-      { name: "Normal", value: stats.normal },
+      { name: t.statusLoyal, value: stats.loyal },
+      { name: t.statusNormal, value: stats.normal },
     ],
-    [stats.loyal, stats.normal]
+    [stats.loyal, stats.normal, t.statusLoyal, t.statusNormal]
   );
 
   const trendData = useMemo(() => {
@@ -106,25 +109,25 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          label="Total Customers"
+          label={t.totalCustomers}
           value={stats.total}
           icon={<Users size={20} />}
           accent="#dc2626"
         />
         <StatCard
-          label="Loyal Customers"
+          label={t.loyalCustomers}
           value={stats.loyal}
           icon={<Star size={20} />}
           accent="#d97706"
         />
         <StatCard
-          label="Normal Customers"
+          label={t.normalCustomers}
           value={stats.normal}
           icon={<UserCheck size={20} />}
           accent="#64748b"
         />
         <StatCard
-          label="New This Month"
+          label={t.newThisMonth}
           value={stats.newThisMonth}
           icon={<TrendingUp size={20} />}
           accent="#16a34a"
@@ -135,7 +138,7 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
           <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-sm lg:col-span-2">
             <h3 className="mb-2 text-sm font-semibold text-ink-900">
-              Loyalty Distribution
+              {t.loyaltyDistribution}
             </h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -161,7 +164,7 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
 
           <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-sm lg:col-span-3">
             <h3 className="mb-2 text-sm font-semibold text-ink-900">
-              New Customers (Last 6 Months)
+              {t.newCustomersChart}
             </h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -180,7 +183,7 @@ export default function StatsOverview({ customers }: StatsOverviewProps) {
                     tickLine={false}
                   />
                   <Tooltip cursor={{ fill: "#fef2f2" }} />
-                  <Bar dataKey="count" name="New Customers" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" name={t.newThisMonth} fill="#dc2626" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

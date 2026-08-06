@@ -12,6 +12,7 @@ import { bulkAddCustomers } from "../../services/customerService";
 import { downloadImportTemplate, parseSpreadsheetFile } from "../../utils/spreadsheetImport";
 import type { ValidatedCustomerRow } from "../../utils/customerValidation";
 import StatusBadge from "./StatusBadge";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface ImportCustomersModalProps {
   onClose: () => void;
@@ -20,6 +21,7 @@ interface ImportCustomersModalProps {
 type Stage = "pick" | "preview" | "importing" | "done";
 
 export default function ImportCustomersModal({ onClose }: ImportCustomersModalProps) {
+  const { t } = useLanguage();
   const [stage, setStage] = useState<Stage>("pick");
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<ValidatedCustomerRow[]>([]);
@@ -84,7 +86,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-          <h2 className="text-lg font-semibold text-ink-900">Import Customers</h2>
+          <h2 className="text-lg font-semibold text-ink-900">{t.importTitle}</h2>
           {stage !== "importing" && (
             <button
               onClick={onClose}
@@ -99,18 +101,12 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {stage === "pick" && (
             <div className="space-y-4">
-              <p className="text-sm text-ink-500">
-                Upload an Excel (.xlsx) or CSV file to bulk-add customers. The first row must
-                contain column headers — Name, Main Phone, Backup Phone, Bundle, Status, and
-                Created Date are recognized automatically.
-              </p>
+              <p className="text-sm text-ink-500">{t.importInstructions}</p>
 
               <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-ink-300 bg-ink-100/50 px-6 py-10 text-center transition hover:border-amtel-400 hover:bg-amtel-50">
                 <UploadCloud size={28} className="text-amtel-600" />
-                <span className="text-sm font-medium text-ink-900">
-                  Click to choose a file
-                </span>
-                <span className="text-xs text-ink-500">.xlsx or .csv</span>
+                <span className="text-sm font-medium text-ink-900">{t.importChooseFile}</span>
+                <span className="text-xs text-ink-500">{t.importFileTypes}</span>
                 <input
                   type="file"
                   accept=".xlsx,.csv"
@@ -131,7 +127,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                 className="flex items-center gap-2 text-sm font-medium text-amtel-600 transition hover:text-amtel-700"
               >
                 <Download size={14} />
-                Download a template spreadsheet
+                {t.importDownloadTemplate}
               </button>
             </div>
           )}
@@ -141,26 +137,25 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-ink-700">
                   <FileSpreadsheet size={16} className="text-ink-500" />
-                  <span className="font-medium">{fileName}</span>
-                  <span className="text-ink-500">· {rows.length} rows</span>
+                  <span className="font-medium">{t.importFileInfo(fileName, rows.length)}</span>
                 </div>
                 {stage === "preview" && (
                   <button
                     onClick={reset}
                     className="text-xs font-medium text-ink-500 underline-offset-2 hover:underline"
                   >
-                    Choose different file
+                    {t.importChooseDifferent}
                   </button>
                 )}
               </div>
 
               <div className="flex gap-3 text-xs">
                 <span className="flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 font-medium text-green-700">
-                  <CheckCircle2 size={12} /> {validRows.length} ready to import
+                  <CheckCircle2 size={12} /> {t.importReadyToImport(validRows.length)}
                 </span>
                 {invalidCount > 0 && (
                   <span className="flex items-center gap-1 rounded-full bg-amtel-50 px-2.5 py-1 font-medium text-amtel-700">
-                    <XCircle size={12} /> {invalidCount} will be skipped
+                    <XCircle size={12} /> {t.importWillBeSkipped(invalidCount)}
                   </span>
                 )}
               </div>
@@ -176,11 +171,11 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-ink-100/80 backdrop-blur">
                       <tr className="text-left text-[10px] uppercase tracking-wide text-ink-500">
-                        <th className="px-3 py-2">Name</th>
-                        <th className="px-3 py-2">Main Phone</th>
-                        <th className="px-3 py-2">Bundle</th>
-                        <th className="px-3 py-2">Status</th>
-                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">{t.importColName}</th>
+                        <th className="px-3 py-2">{t.importColMainPhone}</th>
+                        <th className="px-3 py-2">{t.importColBundle}</th>
+                        <th className="px-3 py-2">{t.importColStatus}</th>
+                        <th className="px-3 py-2">{t.importColRow}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ink-100">
@@ -203,7 +198,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                             ) : (
                               <span className="flex items-center gap-1 text-green-600">
                                 <CheckCircle2 size={12} />
-                                Valid
+                                {t.importValid}
                               </span>
                             )}
                           </td>
@@ -221,12 +216,8 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-green-600">
                 <CheckCircle2 size={24} />
               </div>
-              <p className="font-medium text-ink-900">
-                Imported {importedCount} customer{importedCount === 1 ? "" : "s"}
-              </p>
-              <p className="text-sm text-ink-500">
-                They'll appear in your customer list right away.
-              </p>
+              <p className="font-medium text-ink-900">{t.importDone(importedCount)}</p>
+              <p className="text-sm text-ink-500">{t.importDoneSubtitle}</p>
             </div>
           )}
         </div>
@@ -238,7 +229,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
               disabled={stage === "importing"}
               className="rounded-lg px-4 py-2.5 text-sm font-medium text-ink-700 transition hover:bg-ink-100 disabled:opacity-60"
             >
-              Cancel
+              {t.cancel}
             </button>
             <button
               onClick={() => void handleImport()}
@@ -246,9 +237,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
               className="flex items-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {stage === "importing" && <Loader2 size={14} className="animate-spin" />}
-              {stage === "importing"
-                ? "Importing..."
-                : `Import ${validRows.length} Customer${validRows.length === 1 ? "" : "s"}`}
+              {stage === "importing" ? t.importButtonImporting : t.importButton(validRows.length)}
             </button>
           </div>
         )}
@@ -259,7 +248,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
               onClick={onClose}
               className="rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700"
             >
-              Done
+              {t.doneLabel}
             </button>
           </div>
         )}
