@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-amtel-50: #fef2f2;
+  --color-amtel-100: #fee2e2;
+  --color-amtel-200: #fecaca;
+  --color-amtel-300: #fca5a5;
+  --color-amtel-400: #f87171;
+  --color-amtel-500: #ef4444;
+  --color-amtel-600: #dc2626;
+  --color-amtel-700: #b91c1c;
+  --color-amtel-800: #991b1b;
+  --color-amtel-900: #7f1d1d;
+
+  --color-ink-900: #0f172a;
+  --color-ink-800: #1e293b;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-ink-300: #cbd5e1;
+  --color-ink-100: #f1f5f9;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-100 text-ink-900 antialiased;
+    font-family: var(--font-sans);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-300) transparent;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

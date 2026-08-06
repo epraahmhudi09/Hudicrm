@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isNonEmptyString(value) {
+      return value is string && value.size() > 0 && value.size() <= 200;
+    }
+
+    function isOptionalString(value) {
+      return value is string && value.size() <= 200;
+    }
+
+    function isValidStatus(value) {
+      return value is string && (value == 'loyal' || value == 'normal');
+    }
+
+    // createdAt may be backdated (manual entry or bulk import of historical
+    // records) but never set in the future.
+    function isValidCreatedAt(value) {
+      return value is timestamp && value <= request.time;
+    }
+
+    function hasValidCustomerSchema(data) {
+      return data.keys().hasOnly(
+          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'createdAt', 'updatedAt']) &&
+        isNonEmptyString(data.name) &&
+        isNonEmptyString(data.mainPhone) &&
+        isOptionalString(data.backupPhone) &&
+        isNonEmptyString(data.bundle) &&
+        isValidStatus(data.status) &&
+        isValidCreatedAt(data.createdAt) &&
+        data.updatedAt == request.time;
+    }
+
+    function hasValidCustomerUpdate(data) {
+      return data.keys().hasOnly(
+          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'createdAt', 'updatedAt']) &&
+        isNonEmptyString(data.name) &&
+        isNonEmptyString(data.mainPhone) &&
+        isOptionalString(data.backupPhone) &&
+        isNonEmptyString(data.bundle) &&
+        isValidStatus(data.status) &&
+        data.createdAt == resource.data.createdAt &&
+        data.updatedAt == request.time;
+    }
+
+    match /customers/{customerId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && hasValidCustomerSchema(request.resource.data);
+      allow update: if isSignedIn() && hasValidCustomerUpdate(request.resource.data);
+      allow delete: if isSignedIn();
+    }
+
+    // Per-user profile doc (avatar image). Capped well under Firestore's 1MiB
+    // document limit so a user can't stuff arbitrarily large payloads in.
+    function isValidUserProfile(data) {
+      return data.keys().hasOnly(['photoDataUrl', 'updatedAt']) &&
+        data.photoDataUrl is string && data.photoDataUrl.size() <= 400000 &&
+        data.updatedAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId &&
+        isValidUserProfile(request.resource.data);
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
