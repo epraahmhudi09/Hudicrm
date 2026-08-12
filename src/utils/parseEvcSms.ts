@@ -9,8 +9,12 @@ export interface EvcTopupTransaction {
 // Matches messages like:
 // "04241400000025630734 confirmed. You sell $+0.50 of airtime to 716389055
 //  on 12-08-2026 at 09:15:18 New EVC balance is $+2.00."
+// Note: amount/balance use \d+(?:\.\d+)? rather than [\d.]+ — the latter
+// greedily swallows the sentence-ending period after the balance (e.g.
+// "$+2.00." at the end of the message), producing "2.00." which Number()
+// correctly refuses to parse as a valid number.
 const EVC_SELL_AIRTIME_PATTERN =
-  /^(?<txnId>\S+)\s+confirmed\.\s+You sell\s+\$?\+?(?<amount>[\d.]+)\s+of airtime to\s+(?<phone>\d+)\s+on\s+(?<date>\d{2}-\d{2}-\d{4})\s+at\s+(?<time>\d{2}:\d{2}:\d{2})\s+New EVC balance is\s+\$?\+?(?<balance>[\d.]+)/i;
+  /^(?<txnId>\S+)\s+confirmed\.\s+You sell\s+\$?\+?(?<amount>\d+(?:\.\d+)?)\s+of airtime to\s+(?<phone>\d+)\s+on\s+(?<date>\d{2}-\d{2}-\d{4})\s+at\s+(?<time>\d{2}:\d{2}:\d{2})\s+New EVC balance is\s+\$?\+?(?<balance>\d+(?:\.\d+)?)/i;
 
 function parseEvcDate(date: string, time: string): Date | null {
   const [day, month, year] = date.split("-").map(Number);
