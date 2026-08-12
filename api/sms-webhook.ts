@@ -1,6 +1,6 @@
-import { listCollection, setDocument } from "./lib/firestoreRest";
-import type { VercelRequest, VercelResponse } from "./lib/types";
-import { parseEvcSms } from "../src/utils/parseEvcSms";
+import { listCollection, setDocument } from "./lib/firestoreRest.js";
+import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { parseEvcSms } from "../src/utils/parseEvcSms.js";
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "").slice(-9);

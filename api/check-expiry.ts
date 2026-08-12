@@ -1,6 +1,6 @@
-import { listCollection, queryLessThanOrEqual, updateFields } from "./lib/firestoreRest";
-import { sendPushToTokens } from "./lib/fcmRest";
-import type { VercelRequest, VercelResponse } from "./lib/types";
+import { listCollection, queryLessThanOrEqual, updateFields } from "./lib/firestoreRest.js";
+import { sendPushToTokens } from "./lib/fcmRest.js";
+import type { VercelRequest, VercelResponse } from "./lib/types.js";
 
 const ALERT_AFTER_MS = 24 * 60 * 60 * 1000;
 

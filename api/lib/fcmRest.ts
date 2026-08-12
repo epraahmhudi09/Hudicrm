@@ -1,4 +1,4 @@
-import { getAccessToken, getServiceAccount } from "./googleAuth";
+import { getAccessToken, getServiceAccount } from "./googleAuth.js";
 
 /** Sends one push notification per token via FCM's HTTP v1 API. */
 export async function sendPushToTokens(

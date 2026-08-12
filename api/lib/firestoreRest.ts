@@ -1,4 +1,4 @@
-import { getAccessToken, getServiceAccount } from "./googleAuth";
+import { getAccessToken, getServiceAccount } from "./googleAuth.js";
 
 type FirestoreValue = Record<string, unknown>;
 
