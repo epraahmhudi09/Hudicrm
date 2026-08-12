@@ -1,5 +1,4 @@
-import { Timestamp } from "firebase-admin/firestore";
-import { getDb } from "./_lib/firebaseAdmin";
+import { listCollection, setDocument } from "./_lib/firestoreRest";
 import type { VercelRequest, VercelResponse } from "./_lib/types";
 import { parseEvcSms } from "../src/utils/parseEvcSms";
 
@@ -57,16 +56,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const db = getDb();
     const normalizedTarget = normalizePhone(transaction.phone);
-    const customersSnap = await db.collection("customers").get();
-    const match = customersSnap.docs.find((doc) => {
-      const data = doc.data();
-      return (
-        normalizePhone(String(data.mainPhone ?? "")) === normalizedTarget ||
-        normalizePhone(String(data.backupPhone ?? "")) === normalizedTarget
-      );
-    });
+    const customers = await listCollection("customers");
+    const match = customers.find(
+      (c) =>
+        normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
+        normalizePhone(String(c.backupPhone ?? "")) === normalizedTarget
+    );
 
     if (!match) {
       res.status(200).json({ ok: true, matched: false, reason: "no_customer_match" });
@@ -76,17 +72,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Deterministic doc ID keyed on the EVC transaction ID makes this
     // idempotent — if the forwarder app retries/duplicates a POST, this just
     // overwrites the same activity instead of creating a second one.
-    const activityRef = db
-      .collection("customers")
-      .doc(match.id)
-      .collection("activities")
-      .doc(`evc-${transaction.transactionId}`);
-
-    await activityRef.set({
+    await setDocument(`customers/${match.id}/activities/evc-${transaction.transactionId}`, {
       type: "topup",
       message: `EVC top-up: $${transaction.amount.toFixed(2)} airtime (new balance $${transaction.newBalance.toFixed(2)}, ref ${transaction.transactionId}).`,
       createdBy: "EVC SMS",
-      createdAt: Timestamp.fromDate(transaction.occurredAt),
+      createdAt: transaction.occurredAt,
     });
 
     res.status(200).json({ ok: true, matched: true, customerId: match.id });

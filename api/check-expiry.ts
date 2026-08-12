@@ -1,6 +1,5 @@
-import { Timestamp } from "firebase-admin/firestore";
-import { getMessaging } from "firebase-admin/messaging";
-import { getAdminApp, getDb } from "./_lib/firebaseAdmin";
+import { listCollection, queryLessThanOrEqual, updateFields } from "./_lib/firestoreRest";
+import { sendPushToTokens } from "./_lib/fcmRest";
 import type { VercelRequest, VercelResponse } from "./_lib/types";
 
 const ALERT_AFTER_MS = 24 * 60 * 60 * 1000;
@@ -26,21 +25,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const db = getDb();
-    const messaging = getMessaging(getAdminApp());
-    const cutoff = Timestamp.fromMillis(Date.now() - ALERT_AFTER_MS);
+    const cutoff = new Date(Date.now() - ALERT_AFTER_MS);
 
-    const [expiredSnap, usersSnap] = await Promise.all([
-      db.collection("customers").where("bundleExpiry", "<=", cutoff).get(),
-      db.collection("users").get(),
+    const [expired, users] = await Promise.all([
+      queryLessThanOrEqual("customers", "bundleExpiry", cutoff),
+      listCollection("users"),
     ]);
 
-    const dueForAlert = expiredSnap.docs.filter((doc) => {
-      const data = doc.data();
-      const bundleExpiry = data.bundleExpiry as Timestamp | null;
-      const lastAlertedFor = data.lastExpiryAlertSentFor as Timestamp | null | undefined;
+    const dueForAlert = expired.filter((doc) => {
+      const bundleExpiry = doc.bundleExpiry as Date | null;
+      const lastAlertedFor = doc.lastExpiryAlertSentFor as Date | null | undefined;
       if (!bundleExpiry) return false;
-      return !lastAlertedFor || !lastAlertedFor.isEqual(bundleExpiry);
+      return !lastAlertedFor || lastAlertedFor.getTime() !== bundleExpiry.getTime();
     });
 
     if (dueForAlert.length === 0) {
@@ -48,28 +44,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const tokens = usersSnap.docs
-      .map((doc) => doc.data().fcmToken as string | undefined)
-      .filter((token): token is string => Boolean(token));
+    const tokens = users
+      .map((u) => u.fcmToken as string | undefined)
+      .filter((t): t is string => Boolean(t));
 
     let notified = 0;
     for (const doc of dueForAlert) {
-      const data = doc.data();
-      const name = String(data.name ?? "Customer");
+      const name = String(doc.name ?? "Customer");
 
       if (tokens.length > 0) {
-        await messaging.sendEachForMulticast({
-          tokens,
-          notification: {
-            title: "Bundle expired 24h+ ago",
-            body: `${name}'s bundle expired more than 24 hours ago and hasn't been renewed.`,
-          },
-          webpush: { fcmOptions: { link: "/" } },
+        const result = await sendPushToTokens(tokens, {
+          title: "Bundle expired 24h+ ago",
+          body: `${name}'s bundle expired more than 24 hours ago and hasn't been renewed.`,
         });
-        notified++;
+        if (result.successCount > 0) notified++;
       }
 
-      await doc.ref.update({ lastExpiryAlertSentFor: data.bundleExpiry });
+      await updateFields(`customers/${doc.id}`, { lastExpiryAlertSentFor: doc.bundleExpiry as Date });
     }
 
     res.status(200).json({ ok: true, checked: dueForAlert.length, notified });
