@@ -53,3 +53,35 @@ export function parseEvcSms(text: string): EvcTopupTransaction | null {
     newBalance: parsedBalance,
   };
 }
+
+function addHours(date: Date, hours: number): Date {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
+
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
+// Business rules confirmed by the customer — pricing is tiered, not a flat
+// rate per dollar (e.g. $0.25 and $1 both work out to different effective
+// hourly rates), so this is a lookup table rather than a formula.
+const BUNDLE_TIERS: Array<{ amount: number; expiryFrom: (occurredAt: Date) => Date }> = [
+  { amount: 0.25, expiryFrom: (d) => addHours(d, 10) },
+  { amount: 0.5, expiryFrom: (d) => addHours(d, 36) },
+  { amount: 1, expiryFrom: (d) => addHours(d, 3 * 24) },
+  { amount: 2.5, expiryFrom: (d) => addHours(d, 7 * 24) },
+  { amount: 10, expiryFrom: (d) => addMonths(d, 1) },
+];
+
+/**
+ * Computes when a bundle purchased in this transaction should expire, based
+ * on the confirmed pricing tiers. Returns null for an amount that doesn't
+ * exactly match a known tier — callers should still log the top-up but
+ * leave bundleExpiry untouched rather than guess.
+ */
+export function bundleExpiryFor(transaction: EvcTopupTransaction): Date | null {
+  const tier = BUNDLE_TIERS.find((t) => Math.abs(t.amount - transaction.amount) < 0.001);
+  return tier ? tier.expiryFrom(transaction.occurredAt) : null;
+}
