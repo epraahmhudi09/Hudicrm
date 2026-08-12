@@ -16,11 +16,16 @@ export interface EvcTopupTransaction {
 const EVC_SELL_AIRTIME_PATTERN =
   /^(?<txnId>\S+)\s+confirmed\.\s+You sell\s+\$?\+?(?<amount>\d+(?:\.\d+)?)\s+of airtime to\s+(?<phone>\d+)\s+on\s+(?<date>\d{2}-\d{2}-\d{4})\s+at\s+(?<time>\d{2}:\d{2}:\d{2})\s+New EVC balance is\s+\$?\+?(?<balance>\d+(?:\.\d+)?)/i;
 
+// Amtel/EVC SMS timestamps are in East Africa Time (UTC+3) regardless of
+// what timezone the process parsing them happens to run in (a dev machine
+// might be EAT, but Vercel's functions run in UTC) — building an explicit
+// offset into the ISO string makes the result correct either way, instead
+// of silently drifting by a few hours depending on where this code runs.
 function parseEvcDate(date: string, time: string): Date | null {
   const [day, month, year] = date.split("-").map(Number);
   const [hour, minute, second] = time.split(":").map(Number);
   if ([day, month, year, hour, minute, second].some((n) => Number.isNaN(n))) return null;
-  const parsed = new Date(year, month - 1, day, hour, minute, second);
+  const parsed = new Date(`${date.split("-").reverse().join("-")}T${time}+03:00`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
@@ -60,7 +65,7 @@ function addHours(date: Date, hours: number): Date {
 
 function addMonths(date: Date, months: number): Date {
   const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
+  result.setUTCMonth(result.getUTCMonth() + months);
   return result;
 }
 
