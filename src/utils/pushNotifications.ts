@@ -24,7 +24,10 @@ export async function enablePushNotifications(): Promise<PushSetupResult> {
       { merge: true }
     );
     return "enabled";
-  } catch {
+  } catch (err) {
+    // Logged rather than swallowed — getToken() failures are otherwise
+    // impossible to diagnose from the generic UI error message alone.
+    console.error("enablePushNotifications failed:", err);
     return "error";
   }
 }
