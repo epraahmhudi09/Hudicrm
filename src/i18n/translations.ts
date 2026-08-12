@@ -136,6 +136,13 @@ export interface Translations {
   activityUpdated: string;
   activityStatusChanged: (status: string) => string;
   activityCalled: (phone: string) => string;
+
+  notifTitle: string;
+  notifEnable: string;
+  notifEnabled: string;
+  notifDenied: string;
+  notifUnsupported: string;
+  notifError: string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -281,6 +288,13 @@ export const translations: Record<"en" | "so", Translations> = {
     activityUpdated: "Customer details updated.",
     activityStatusChanged: (status) => `Status changed to ${status}.`,
     activityCalled: (phone) => `Called ${phone}.`,
+
+    notifTitle: "Push Notifications",
+    notifEnable: "Enable Notifications",
+    notifEnabled: "Notifications enabled on this device",
+    notifDenied: "Notification permission was denied in your browser settings.",
+    notifUnsupported: "Push notifications aren't supported in this browser.",
+    notifError: "Couldn't enable notifications. Please try again.",
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -425,6 +439,13 @@ export const translations: Record<"en" | "so", Translations> = {
     activityUpdated: "Macluumaadka macmiilka waa la cusboonaysiiyay.",
     activityStatusChanged: (status) => `Xaaladda waxaa loo beddelay ${status}.`,
     activityCalled: (phone) => `Waxaa la wacay ${phone}.`,
+
+    notifTitle: "Ogeysiisyada (Notifications)",
+    notifEnable: "Shid Ogeysiisyada",
+    notifEnabled: "Ogeysiisyada waa la shiday device-kan",
+    notifDenied: "Ogolaanshaha ogeysiisyada waa laga diiday browser-kaaga settings-kiisa.",
+    notifUnsupported: "Ogeysiisyada lama taageerin browser-kan.",
+    notifError: "Ogeysiisyada lama shidi karin. Fadlan mar kale isku day.",
   },
 };
 

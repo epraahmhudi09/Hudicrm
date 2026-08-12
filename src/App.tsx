@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Bell, X } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
@@ -20,6 +20,7 @@ import {
 } from "./services/customerService";
 import { daysUntilExpiry } from "./components/customers/ExpiryBadge";
 import { exportCustomersToExcel } from "./utils/spreadsheetExport";
+import { listenForForegroundMessages } from "./utils/pushNotifications";
 import type { Customer, CustomerFilter, CustomerFormData } from "./types/customer";
 
 const ImportCustomersModal = lazy(() => import("./components/customers/ImportCustomersModal"));
@@ -57,6 +58,20 @@ function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = listenForForegroundMessages((title, body) => {
+      setToast({ title, body });
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 8000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
@@ -158,6 +173,25 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-ink-100">
       <Navbar />
+
+      {toast && (
+        <div className="fixed right-4 top-20 z-50 flex w-full max-w-sm items-start gap-3 rounded-xl border border-ink-100 bg-white p-4 shadow-lg">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amtel-50 text-amtel-600">
+            <Bell size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink-900">{toast.title}</p>
+            <p className="mt-0.5 text-sm text-ink-500">{toast.body}</p>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            className="rounded-lg p-1 text-ink-500 transition hover:bg-ink-100"
+            aria-label="Close"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6">
         <StatsOverview customers={customers} />

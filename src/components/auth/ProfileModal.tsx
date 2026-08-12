@@ -6,6 +6,7 @@ import {
   AlertCircle,
   UserCircle,
   Camera,
+  Bell,
 } from "lucide-react";
 import {
   EmailAuthProvider,
@@ -18,6 +19,7 @@ import { auth, db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { resizeImageToDataUrl } from "../../utils/imageResize";
+import { enablePushNotifications, type PushSetupResult } from "../../utils/pushNotifications";
 
 interface ProfileModalProps {
   onClose: () => void;
@@ -58,6 +60,16 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordStatus, setPasswordStatus] = useState<SectionStatus>("idle");
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const [notifStatus, setNotifStatus] = useState<SectionStatus>("idle");
+  const [notifResult, setNotifResult] = useState<PushSetupResult | null>(null);
+
+  async function handleEnableNotifications() {
+    setNotifStatus("saving");
+    const result = await enablePushNotifications();
+    setNotifResult(result);
+    setNotifStatus(result === "enabled" ? "success" : "error");
+  }
 
   async function handleSaveName(e: FormEvent) {
     e.preventDefault();
@@ -272,6 +284,37 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               </p>
             )}
           </form>
+
+          {/* Push notifications */}
+          <div className="space-y-2 border-t border-ink-100 pt-5">
+            <p className="text-sm font-medium text-ink-700">{t.notifTitle}</p>
+            <button
+              type="button"
+              onClick={() => void handleEnableNotifications()}
+              disabled={notifStatus === "saving"}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-ink-300 px-4 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {notifStatus === "saving" ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Bell size={14} />
+              )}
+              {t.notifEnable}
+            </button>
+            {notifStatus === "success" && (
+              <p className="flex items-center gap-1.5 text-xs text-green-600">
+                <Check size={12} /> {t.notifEnabled}
+              </p>
+            )}
+            {notifStatus === "error" && notifResult && (
+              <p className="flex items-center gap-1.5 text-xs text-amtel-600">
+                <AlertCircle size={12} />
+                {notifResult === "denied" && t.notifDenied}
+                {notifResult === "unsupported" && t.notifUnsupported}
+                {notifResult === "error" && t.notifError}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

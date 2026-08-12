@@ -8,6 +8,7 @@ import {
   StickyNote,
   UserPlus,
   Pencil,
+  Wallet,
 } from "lucide-react";
 import type { Customer, CustomerActivity } from "../../types/customer";
 import { getActivitiesRealtime, logActivity } from "../../services/customerService";
@@ -24,6 +25,7 @@ const ICONS: Record<CustomerActivity["type"], typeof Star> = {
   call: Phone,
   note: StickyNote,
   updated: Pencil,
+  topup: Wallet,
 };
 
 function formatTimestamp(activity: CustomerActivity): string {

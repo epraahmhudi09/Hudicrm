@@ -10,6 +10,8 @@ export interface Customer {
   bundle: string;
   status: CustomerStatus;
   bundleExpiry: Timestamp | null;
+  /** Set by the scheduled Cloud Function — never written by the client. */
+  lastExpiryAlertSentFor: Timestamp | null;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
 }
@@ -35,7 +37,7 @@ export const EMPTY_CUSTOMER_FORM: CustomerFormData = {
 
 export type CustomerFilter = "all" | "loyal" | "normal" | "expiring";
 
-export type ActivityType = "created" | "status_change" | "call" | "note" | "updated";
+export type ActivityType = "created" | "status_change" | "call" | "note" | "updated" | "topup";
 
 export interface CustomerActivity {
   id: string;

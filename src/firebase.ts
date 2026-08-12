@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { initializeFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import { getMessaging, isSupported as isMessagingSupported, type Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,4 +33,15 @@ isSupported()
   })
   .catch(() => {
     // Analytics is optional — ignore environments where it can't initialize.
+  });
+
+// Push messaging needs a real browser with service worker + Notification
+// support (unavailable in some in-app browsers, older Safari, etc.).
+export let messaging: Messaging | undefined;
+isMessagingSupported()
+  .then((supported) => {
+    if (supported) messaging = getMessaging(app);
+  })
+  .catch(() => {
+    // Messaging is optional — ignore environments where it can't initialize.
   });

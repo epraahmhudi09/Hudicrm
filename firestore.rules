@@ -33,7 +33,8 @@ service cloud.firestore {
 
     function hasValidCustomerSchema(data) {
       return data.keys().hasOnly(
-          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry', 'createdAt', 'updatedAt']) &&
+          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
+           'lastExpiryAlertSentFor', 'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -44,15 +45,21 @@ service cloud.firestore {
         data.updatedAt == request.time;
     }
 
+    // lastExpiryAlertSentFor is stamped by the scheduled Cloud Function (via
+    // the Admin SDK, which bypasses these rules) — clients never set it, but
+    // must be allowed to pass it through unchanged on ordinary edits, since
+    // `update` sees the full merged document here, not just changed fields.
     function hasValidCustomerUpdate(data) {
       return data.keys().hasOnly(
-          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry', 'createdAt', 'updatedAt']) &&
+          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
+           'lastExpiryAlertSentFor', 'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
         isNonEmptyString(data.bundle) &&
         isValidStatus(data.status) &&
         isValidBundleExpiry(data.bundleExpiry) &&
+        isValidBundleExpiry(data.lastExpiryAlertSentFor) &&
         data.createdAt == resource.data.createdAt &&
         data.updatedAt == request.time;
     }
@@ -68,7 +75,7 @@ service cloud.firestore {
       function isValidActivityType(value) {
         return value is string &&
           (value == 'created' || value == 'status_change' || value == 'call' ||
-           value == 'note' || value == 'updated');
+           value == 'note' || value == 'updated' || value == 'topup');
       }
 
       function hasValidActivity(data) {
@@ -86,11 +93,13 @@ service cloud.firestore {
       }
     }
 
-    // Per-user profile doc (avatar image). Capped well under Firestore's 1MiB
-    // document limit so a user can't stuff arbitrarily large payloads in.
+    // Per-user profile doc (avatar image + push notification token). Capped
+    // well under Firestore's 1MiB document limit so a user can't stuff
+    // arbitrarily large payloads in.
     function isValidUserProfile(data) {
-      return data.keys().hasOnly(['photoDataUrl', 'updatedAt']) &&
-        data.photoDataUrl is string && data.photoDataUrl.size() <= 400000 &&
+      return data.keys().hasOnly(['photoDataUrl', 'fcmToken', 'updatedAt']) &&
+        (!('photoDataUrl' in data) || (data.photoDataUrl is string && data.photoDataUrl.size() <= 400000)) &&
+        (!('fcmToken' in data) || data.fcmToken is string) &&
         data.updatedAt == request.time;
     }
 
