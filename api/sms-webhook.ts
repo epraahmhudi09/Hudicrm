@@ -1,5 +1,5 @@
-import { listCollection, setDocument } from "./_lib/firestoreRest";
-import type { VercelRequest, VercelResponse } from "./_lib/types";
+import { listCollection, setDocument } from "./lib/firestoreRest";
+import type { VercelRequest, VercelResponse } from "./lib/types";
 import { parseEvcSms } from "../src/utils/parseEvcSms";
 
 function normalizePhone(phone: string): string {
