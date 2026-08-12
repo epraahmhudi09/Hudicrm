@@ -292,7 +292,8 @@ export const translations: Record<"en" | "so", Translations> = {
     notifTitle: "Push Notifications",
     notifEnable: "Enable Notifications",
     notifEnabled: "Notifications enabled on this device",
-    notifDenied: "Notification permission was denied in your browser settings.",
+    notifDenied:
+      "Notifications are blocked for this site. Tap the lock/info icon next to the address bar, open Site settings, and set Notifications to Allow, then try again.",
     notifUnsupported: "Push notifications aren't supported in this browser.",
     notifError: "Couldn't enable notifications. Please try again.",
   },
@@ -443,7 +444,8 @@ export const translations: Record<"en" | "so", Translations> = {
     notifTitle: "Ogeysiisyada (Notifications)",
     notifEnable: "Shid Ogeysiisyada",
     notifEnabled: "Ogeysiisyada waa la shiday device-kan",
-    notifDenied: "Ogolaanshaha ogeysiisyada waa laga diiday browser-kaaga settings-kiisa.",
+    notifDenied:
+      "Ogeysiisyada waa laga xanibay site-kan. Riix icon-ka lock/info-ga ee agagaarka address bar-ka, fur Site settings, ka dhig Notifications 'Allow', kadibna mar kale isku day.",
     notifUnsupported: "Ogeysiisyada lama taageerin browser-kan.",
     notifError: "Ogeysiisyada lama shidi karin. Fadlan mar kale isku day.",
   },

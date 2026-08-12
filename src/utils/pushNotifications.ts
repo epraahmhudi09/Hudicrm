@@ -28,6 +28,15 @@ export async function enablePushNotifications(): Promise<PushSetupResult> {
     // Logged rather than swallowed — getToken() failures are otherwise
     // impossible to diagnose from the generic UI error message alone.
     console.error("enablePushNotifications failed:", err);
+    // Firebase does its own permission check inside getToken() and can
+    // throw permission-blocked/permission-default even after our earlier
+    // Notification.requestPermission() call reported "granted" — treat
+    // these the same as an explicit denial so the user gets the actionable
+    // "check your browser settings" message instead of a generic one.
+    const code = (err as { code?: string }).code;
+    if (code === "messaging/permission-blocked" || code === "messaging/permission-default") {
+      return "denied";
+    }
     return "error";
   }
 }
