@@ -1,5 +1,5 @@
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { getAdminApp } from "./_lib/firebaseAdmin";
+import { Timestamp } from "firebase-admin/firestore";
+import { getDb } from "./_lib/firebaseAdmin";
 import type { VercelRequest, VercelResponse } from "./_lib/types";
 import { parseEvcSms } from "../src/utils/parseEvcSms";
 
@@ -30,63 +30,68 @@ function extractSmsText(body: unknown): string | null {
  *   https://<your-vercel-domain>/api/sms-webhook?token=<SMS_WEBHOOK_SECRET>
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    res.status(405).json({ ok: false, error: "method_not_allowed" });
-    return;
+  try {
+    if (req.method !== "POST") {
+      res.status(405).json({ ok: false, error: "method_not_allowed" });
+      return;
+    }
+
+    const expectedToken = process.env.SMS_WEBHOOK_SECRET;
+    const providedToken =
+      (req.query.token as string | undefined) ?? (req.headers["x-webhook-token"] as string | undefined);
+
+    if (!expectedToken || providedToken !== expectedToken) {
+      res.status(401).json({ ok: false, error: "unauthorized" });
+      return;
+    }
+
+    const text = extractSmsText(req.body);
+    if (!text) {
+      res.status(400).json({ ok: false, error: "no_message_text_found" });
+      return;
+    }
+
+    const transaction = parseEvcSms(text);
+    if (!transaction) {
+      res.status(200).json({ ok: true, matched: false, reason: "unrecognized_format" });
+      return;
+    }
+
+    const db = getDb();
+    const normalizedTarget = normalizePhone(transaction.phone);
+    const customersSnap = await db.collection("customers").get();
+    const match = customersSnap.docs.find((doc) => {
+      const data = doc.data();
+      return (
+        normalizePhone(String(data.mainPhone ?? "")) === normalizedTarget ||
+        normalizePhone(String(data.backupPhone ?? "")) === normalizedTarget
+      );
+    });
+
+    if (!match) {
+      res.status(200).json({ ok: true, matched: false, reason: "no_customer_match" });
+      return;
+    }
+
+    // Deterministic doc ID keyed on the EVC transaction ID makes this
+    // idempotent — if the forwarder app retries/duplicates a POST, this just
+    // overwrites the same activity instead of creating a second one.
+    const activityRef = db
+      .collection("customers")
+      .doc(match.id)
+      .collection("activities")
+      .doc(`evc-${transaction.transactionId}`);
+
+    await activityRef.set({
+      type: "topup",
+      message: `EVC top-up: $${transaction.amount.toFixed(2)} airtime (new balance $${transaction.newBalance.toFixed(2)}, ref ${transaction.transactionId}).`,
+      createdBy: "EVC SMS",
+      createdAt: Timestamp.fromDate(transaction.occurredAt),
+    });
+
+    res.status(200).json({ ok: true, matched: true, customerId: match.id });
+  } catch (err) {
+    console.error("sms-webhook error:", err);
+    res.status(500).json({ ok: false, error: "internal_error", message: (err as Error).message });
   }
-
-  const expectedToken = process.env.SMS_WEBHOOK_SECRET;
-  const providedToken =
-    (req.query.token as string | undefined) ?? (req.headers["x-webhook-token"] as string | undefined);
-
-  if (!expectedToken || providedToken !== expectedToken) {
-    res.status(401).json({ ok: false, error: "unauthorized" });
-    return;
-  }
-
-  const text = extractSmsText(req.body);
-  if (!text) {
-    res.status(400).json({ ok: false, error: "no_message_text_found" });
-    return;
-  }
-
-  const transaction = parseEvcSms(text);
-  if (!transaction) {
-    res.status(200).json({ ok: true, matched: false, reason: "unrecognized_format" });
-    return;
-  }
-
-  const db = getFirestore(getAdminApp());
-  const normalizedTarget = normalizePhone(transaction.phone);
-  const customersSnap = await db.collection("customers").get();
-  const match = customersSnap.docs.find((doc) => {
-    const data = doc.data();
-    return (
-      normalizePhone(String(data.mainPhone ?? "")) === normalizedTarget ||
-      normalizePhone(String(data.backupPhone ?? "")) === normalizedTarget
-    );
-  });
-
-  if (!match) {
-    res.status(200).json({ ok: true, matched: false, reason: "no_customer_match" });
-    return;
-  }
-
-  // Deterministic doc ID keyed on the EVC transaction ID makes this
-  // idempotent — if the forwarder app retries/duplicates a POST, this just
-  // overwrites the same activity instead of creating a second one.
-  const activityRef = db
-    .collection("customers")
-    .doc(match.id)
-    .collection("activities")
-    .doc(`evc-${transaction.transactionId}`);
-
-  await activityRef.set({
-    type: "topup",
-    message: `EVC top-up: $${transaction.amount.toFixed(2)} airtime (new balance $${transaction.newBalance.toFixed(2)}, ref ${transaction.transactionId}).`,
-    createdBy: "EVC SMS",
-    createdAt: Timestamp.fromDate(transaction.occurredAt),
-  });
-
-  res.status(200).json({ ok: true, matched: true, customerId: match.id });
 }
