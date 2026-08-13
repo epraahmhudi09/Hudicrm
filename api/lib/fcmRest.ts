@@ -4,12 +4,13 @@ import { getAccessToken, getServiceAccount } from "./googleAuth.js";
 export async function sendPushToTokens(
   tokens: string[],
   notification: { title: string; body: string }
-): Promise<{ successCount: number; failureCount: number }> {
+): Promise<{ successCount: number; failureCount: number; errors: string[] }> {
   const token = await getAccessToken(["https://www.googleapis.com/auth/firebase.messaging"]);
   const url = `https://fcm.googleapis.com/v1/projects/${getServiceAccount().project_id}/messages:send`;
 
   let successCount = 0;
   let failureCount = 0;
+  const errors: string[] = [];
 
   for (const deviceToken of tokens) {
     const res = await fetch(url, {
@@ -27,9 +28,13 @@ export async function sendPushToTokens(
       }),
     });
 
-    if (res.ok) successCount++;
-    else failureCount++;
+    if (res.ok) {
+      successCount++;
+    } else {
+      failureCount++;
+      errors.push(`${res.status}: ${await res.text()}`);
+    }
   }
 
-  return { successCount, failureCount };
+  return { successCount, failureCount, errors };
 }

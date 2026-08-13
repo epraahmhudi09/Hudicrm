@@ -32,6 +32,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       listCollection("users"),
     ]);
 
+    const tokens = users
+      .map((u) => u.fcmToken as string | undefined)
+      .filter((t): t is string => Boolean(t));
+
     const dueForAlert = expired.filter((doc) => {
       const bundleExpiry = doc.bundleExpiry as Date | null;
       const lastAlertedFor = doc.lastExpiryAlertSentFor as Date | null | undefined;
@@ -40,13 +44,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (dueForAlert.length === 0) {
-      res.status(200).json({ ok: true, checked: 0, notified: 0 });
+      res.status(200).json({ ok: true, checked: 0, notified: 0, tokensRegistered: tokens.length });
       return;
     }
-
-    const tokens = users
-      .map((u) => u.fcmToken as string | undefined)
-      .filter((t): t is string => Boolean(t));
 
     // One combined notification listing who's overdue, instead of a
     // separate push per customer — much more useful when several lapse
@@ -57,19 +57,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       names.length <= 3 ? names.join(", ") : `${names.slice(0, 3).join(", ")} +${names.length - 3} more`;
 
     let notified = 0;
+    let pushErrors: string[] = [];
     if (tokens.length > 0) {
       const result = await sendPushToTokens(tokens, {
         title: `${dueForAlert.length} bundle${dueForAlert.length === 1 ? "" : "s"} expired 24h+ ago`,
         body: `${namesPreview} — please follow up.`,
       });
       if (result.successCount > 0) notified = dueForAlert.length;
+      pushErrors = result.errors;
     }
 
     for (const doc of dueForAlert) {
       await updateFields(`customers/${doc.id}`, { lastExpiryAlertSentFor: doc.bundleExpiry as Date });
     }
 
-    res.status(200).json({ ok: true, checked: dueForAlert.length, notified });
+    res.status(200).json({
+      ok: true,
+      checked: dueForAlert.length,
+      notified,
+      tokensRegistered: tokens.length,
+      pushErrors,
+    });
   } catch (err) {
     console.error("check-expiry error:", err);
     res.status(500).json({ ok: false, error: "internal_error", message: (err as Error).message });
