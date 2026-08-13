@@ -109,6 +109,36 @@ service cloud.firestore {
         isValidUserProfile(request.resource.data);
     }
 
+    // Customers who owe the business money (tracked separately from the
+    // regular customers collection — no status/bundle fields, just a
+    // running amount owed).
+    function hasValidDebtCustomerSchema(data) {
+      return data.keys().hasOnly(['name', 'phone', 'backupPhone', 'amount', 'createdAt', 'updatedAt']) &&
+        isNonEmptyString(data.name) &&
+        isNonEmptyString(data.phone) &&
+        isOptionalString(data.backupPhone) &&
+        data.amount is number && data.amount >= 0 &&
+        isValidCreatedAt(data.createdAt) &&
+        data.updatedAt == request.time;
+    }
+
+    function hasValidDebtCustomerUpdate(data) {
+      return data.keys().hasOnly(['name', 'phone', 'backupPhone', 'amount', 'createdAt', 'updatedAt']) &&
+        isNonEmptyString(data.name) &&
+        isNonEmptyString(data.phone) &&
+        isOptionalString(data.backupPhone) &&
+        data.amount is number && data.amount >= 0 &&
+        data.createdAt == resource.data.createdAt &&
+        data.updatedAt == request.time;
+    }
+
+    match /debtCustomers/{debtCustomerId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && hasValidDebtCustomerSchema(request.resource.data);
+      allow update: if isSignedIn() && hasValidDebtCustomerUpdate(request.resource.data);
+      allow delete: if isSignedIn();
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { LogOut, UserCircle, ChevronDown, UserCog, Languages } from "lucide-react";
+import { LogOut, UserCircle, ChevronDown, UserCog, Languages, Menu } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import Logo from "./Logo";
 import ProfileModal from "../auth/ProfileModal";
 
-export default function Navbar() {
+interface NavbarProps {
+  onToggleSidebar: () => void;
+}
+
+export default function Navbar({ onToggleSidebar }: NavbarProps) {
   const { user, profilePhoto, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,7 +32,16 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-30 bg-gradient-to-r from-amtel-700 to-amtel-600 shadow-md">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6">
-        <Logo variant="light" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onToggleSidebar}
+            aria-label={t.toggleSidebar}
+            className="rounded-lg p-1.5 text-white/95 transition hover:bg-white/10"
+          >
+            <Menu size={20} />
+          </button>
+          <Logo variant="light" />
+        </div>
 
         <div className="flex items-center gap-2">
           <button

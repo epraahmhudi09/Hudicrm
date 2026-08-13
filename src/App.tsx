@@ -4,6 +4,8 @@ import { useAuth } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
+import Sidebar, { type AppView } from "./components/layout/Sidebar";
+import DebtCustomersView from "./components/debtCustomers/DebtCustomersView";
 import StatsOverview from "./components/dashboard/StatsOverview";
 import SearchFilterBar from "./components/customers/SearchFilterBar";
 import CustomerTable from "./components/customers/CustomerTable";
@@ -42,6 +44,8 @@ const SuspenseModalFallback = (
 
 function Dashboard() {
   const { t } = useLanguage();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [view, setView] = useState<AppView>("customers");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -172,7 +176,13 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-ink-100">
-      <Navbar />
+      <Navbar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        view={view}
+        onNavigate={setView}
+      />
 
       {toast && (
         <div className="fixed right-4 top-20 z-50 flex w-full max-w-sm items-start gap-3 rounded-xl border border-ink-100 bg-white p-4 shadow-lg">
@@ -194,41 +204,47 @@ function Dashboard() {
       )}
 
       <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6">
-        <StatsOverview customers={customers} />
+        {view === "customers" ? (
+          <>
+            <StatsOverview customers={customers} />
 
-        <SearchFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          filter={filter}
-          onFilterChange={setFilter}
-          onAddCustomer={openAddForm}
-          onImportCustomers={() => setImportOpen(true)}
-          onExportCustomers={() => void handleExport()}
-          exporting={exporting}
-        />
+            <SearchFilterBar
+              search={search}
+              onSearchChange={setSearch}
+              filter={filter}
+              onFilterChange={setFilter}
+              onAddCustomer={openAddForm}
+              onImportCustomers={() => setImportOpen(true)}
+              onExportCustomers={() => void handleExport()}
+              exporting={exporting}
+            />
 
-        {loadingCustomers ? (
-          <div className="flex items-center justify-center rounded-xl border border-ink-100 bg-white py-20">
-            <Loader2 size={24} className="animate-spin text-amtel-600" />
-          </div>
-        ) : loadError ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-amtel-200 bg-amtel-50 py-16 text-center">
-            <AlertTriangle size={22} className="text-amtel-600" />
-            <p className="font-medium text-amtel-700">{t.couldntLoadCustomers}</p>
-            <p className="max-w-sm text-sm text-amtel-600">{loadError}</p>
-          </div>
-        ) : filteredCustomers.length === 0 ? (
-          <EmptyState hasFilters={hasActiveFilters} onAddCustomer={openAddForm} />
+            {loadingCustomers ? (
+              <div className="flex items-center justify-center rounded-xl border border-ink-100 bg-white py-20">
+                <Loader2 size={24} className="animate-spin text-amtel-600" />
+              </div>
+            ) : loadError ? (
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-amtel-200 bg-amtel-50 py-16 text-center">
+                <AlertTriangle size={22} className="text-amtel-600" />
+                <p className="font-medium text-amtel-700">{t.couldntLoadCustomers}</p>
+                <p className="max-w-sm text-sm text-amtel-600">{loadError}</p>
+              </div>
+            ) : filteredCustomers.length === 0 ? (
+              <EmptyState hasFilters={hasActiveFilters} onAddCustomer={openAddForm} />
+            ) : (
+              <CustomerTable
+                customers={filteredCustomers}
+                onEdit={openEditForm}
+                onDelete={setDeleteTarget}
+                onToggleStatus={handleToggleStatus}
+                onViewHistory={setHistoryCustomer}
+                onCallLogged={handleCallLogged}
+                togglingId={togglingId}
+              />
+            )}
+          </>
         ) : (
-          <CustomerTable
-            customers={filteredCustomers}
-            onEdit={openEditForm}
-            onDelete={setDeleteTarget}
-            onToggleStatus={handleToggleStatus}
-            onViewHistory={setHistoryCustomer}
-            onCallLogged={handleCallLogged}
-            togglingId={togglingId}
-          />
+          <DebtCustomersView />
         )}
       </main>
 

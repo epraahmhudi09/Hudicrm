@@ -143,6 +143,37 @@ export interface Translations {
   notifDenied: string;
   notifUnsupported: string;
   notifError: string;
+
+  navCustomers: string;
+  navDebtCustomers: string;
+  toggleSidebar: string;
+
+  debtCustomersTitle: string;
+  debtCustomersSubtitle: string;
+  totalDebt: string;
+  addDebtCustomer: string;
+  editDebtCustomer: string;
+  fieldPhone: string;
+  fieldPhonePlaceholder: string;
+  fieldAmount: string;
+  fieldAmountPlaceholder: string;
+  phoneRequired: string;
+  amountRequired: string;
+  amountInvalid: string;
+  debtColName: string;
+  debtColPhone: string;
+  debtColBackupPhone: string;
+  debtColAmount: string;
+  debtColCreated: string;
+  debtColActions: string;
+  debtEmptyTitle: string;
+  debtEmptySubtitle: string;
+  debtEmptyFilteredTitle: string;
+  debtEmptyFilteredSubtitle: string;
+  deleteDebtCustomerTitle: string;
+  deleteDebtCustomerMessage: (name: string) => string;
+  couldntLoadDebtCustomers: string;
+  debtSearchPlaceholder: string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -296,6 +327,38 @@ export const translations: Record<"en" | "so", Translations> = {
       "Notifications are blocked for this site. Tap the lock/info icon next to the address bar, open Site settings, and set Notifications to Allow, then try again.",
     notifUnsupported: "Push notifications aren't supported in this browser.",
     notifError: "Couldn't enable notifications. Please try again.",
+
+    navCustomers: "Customers",
+    navDebtCustomers: "Debt Customers",
+    toggleSidebar: "Toggle menu",
+
+    debtCustomersTitle: "Debt Customers",
+    debtCustomersSubtitle: "Track customers who owe money and how much they still need to pay.",
+    totalDebt: "Total Debt",
+    addDebtCustomer: "Add Debt Customer",
+    editDebtCustomer: "Edit Debt Customer",
+    fieldPhone: "Phone",
+    fieldPhonePlaceholder: "+1 555 123 4567",
+    fieldAmount: "Amount Owed",
+    fieldAmountPlaceholder: "0.00",
+    phoneRequired: "Phone number is required.",
+    amountRequired: "Amount is required.",
+    amountInvalid: "Enter a valid amount.",
+    debtColName: "Name",
+    debtColPhone: "Phone",
+    debtColBackupPhone: "Backup Phone",
+    debtColAmount: "Amount Owed",
+    debtColCreated: "Created",
+    debtColActions: "Actions",
+    debtEmptyTitle: "No debt customers yet",
+    debtEmptySubtitle: "Add a customer who owes money to start tracking their debt.",
+    debtEmptyFilteredTitle: "No debt customers found",
+    debtEmptyFilteredSubtitle: "Try adjusting your search term to find what you're looking for.",
+    deleteDebtCustomerTitle: "Delete debt record?",
+    deleteDebtCustomerMessage: (name) =>
+      `This will permanently remove "${name}" from your debt customer list. This action cannot be undone.`,
+    couldntLoadDebtCustomers: "Couldn't load debt customers",
+    debtSearchPlaceholder: "Search name or phone...",
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -448,6 +511,38 @@ export const translations: Record<"en" | "so", Translations> = {
       "Ogeysiisyada waa laga xanibay site-kan. Riix icon-ka lock/info-ga ee agagaarka address bar-ka, fur Site settings, ka dhig Notifications 'Allow', kadibna mar kale isku day.",
     notifUnsupported: "Ogeysiisyada lama taageerin browser-kan.",
     notifError: "Ogeysiisyada lama shidi karin. Fadlan mar kale isku day.",
+
+    navCustomers: "Macaamiisha",
+    navDebtCustomers: "Macaamiisha Deynta",
+    toggleSidebar: "Furfur menu-ga",
+
+    debtCustomersTitle: "Macaamiisha Deynta",
+    debtCustomersSubtitle: "La soco macaamiisha lacag ku leh iyo intay ku hartay inay bixiyaan.",
+    totalDebt: "Wadarta Deynta",
+    addDebtCustomer: "Ku Dar Macmiil Deyn Leh",
+    editDebtCustomer: "Wax ka Beddel Macmiilka Deynta",
+    fieldPhone: "Telefoonka",
+    fieldPhonePlaceholder: "+252 61 234 5678",
+    fieldAmount: "Lacagta La Leeyahay",
+    fieldAmountPlaceholder: "0.00",
+    phoneRequired: "Lambarka telefoonka waa lagama maarmaan.",
+    amountRequired: "Lacagta waa lagama maarmaan.",
+    amountInvalid: "Geli lacag sax ah.",
+    debtColName: "Magaca",
+    debtColPhone: "Telefoonka",
+    debtColBackupPhone: "Telefoonka Labaad",
+    debtColAmount: "Lacagta La Leeyahay",
+    debtColCreated: "La Sameeyay",
+    debtColActions: "Ficillada",
+    debtEmptyTitle: "Weli macmiil deyn leh ma jiro",
+    debtEmptySubtitle: "Ku dar macmiil lacag ku leh si aad u bilowdo la socodka deyntiisa.",
+    debtEmptyFilteredTitle: "Macmiil deyn leh lama helin",
+    debtEmptyFilteredSubtitle: "Isku day inaad bedesho ereyga raadinta si aad u hesho waxaad raadinaysid.",
+    deleteDebtCustomerTitle: "Xogta deynta tirtir?",
+    deleteDebtCustomerMessage: (name) =>
+      `Tan waxay si joogto ah uga saarayaa "${name}" liiska macaamiisha deynta. Ficilkan lama soo celin karo.`,
+    couldntLoadDebtCustomers: "Macaamiisha deynta lama soo geli karin",
+    debtSearchPlaceholder: "Raadi magaca ama telefoonka...",
   },
 };
 
