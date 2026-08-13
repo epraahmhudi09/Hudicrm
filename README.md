@@ -84,6 +84,31 @@ e.g. "SMS Forwarder" on Android) at:
 https://<your-vercel-domain>/api/sms-webhook?token=<SMS_WEBHOOK_SECRET>
 ```
 
+#### Alternative: Termux script (no third-party forwarding app)
+
+If a black-box SMS-forwarding app isn't reliable enough, run
+[`scripts/termux-evc-forwarder.sh`](./scripts/termux-evc-forwarder.sh) instead —
+a small open-source script (not a compiled app) that polls the inbox itself
+via [Termux:API](https://wiki.termux.com/wiki/Termux:API) and posts new
+messages from the EVC sender straight to the webhook. On the phone with the
+Amtel SIM:
+
+1. Install **Termux** and **Termux:API** from
+   [F-Droid](https://f-droid.org/packages/com.termux/) (not the Play Store
+   build — it's outdated and incompatible). Open Termux:API once and grant it
+   the SMS permission when prompted.
+2. In Termux: `pkg install termux-api jq curl`
+3. Copy `scripts/termux-evc-forwarder.sh` onto the phone (e.g. `curl` it from
+   a Gist/raw GitHub URL, or use Termux's built-in file editor) and edit the
+   `WEBHOOK_TOKEN` variable at the top to match `SMS_WEBHOOK_SECRET`.
+4. `chmod +x termux-evc-forwarder.sh && ./termux-evc-forwarder.sh` — it polls
+   every 20 seconds, tracks the last forwarded message so nothing is sent
+   twice, and logs each forward with its HTTP response code.
+5. To survive phone reboots, install **Termux:Boot** (also from F-Droid),
+   then put a one-line script in `~/.termux/boot/` that launches
+   `termux-evc-forwarder.sh`. Also disable battery optimization for Termux in
+   Android Settings → Apps → Termux → Battery, so Android doesn't kill it.
+
 ### Expiry alerts
 
 `/api/check-expiry` finds customers whose `bundleExpiry` passed 24+ hours
