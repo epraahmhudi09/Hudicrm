@@ -10,6 +10,7 @@ export interface CustomerRowInput {
   bundle: string;
   status: string;
   createdAt: string | Date;
+  bundleExpiry: string | Date;
   /** Free-text bundle name from the spreadsheet, resolved by name against the live Bundles registry. */
   assignedBundle: string;
 }
@@ -31,6 +32,12 @@ export function parseRowDate(value: string | Date | null | undefined): Date | nu
   if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
   const parsed = new Date(value);
   return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** Formats a Date as a yyyy-mm-dd input value using local calendar date, not UTC. */
+function dateToInputValue(date: Date): string {
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
 export function validateCustomerRow(input: CustomerRowInput, bundles: Bundle[]): ValidatedCustomerRow {
@@ -68,6 +75,8 @@ export function validateCustomerRow(input: CustomerRowInput, bundles: Bundle[]):
     }
   }
 
+  const bundleExpiryDate = parseRowDate(input.bundleExpiry);
+
   return {
     data: {
       name,
@@ -75,7 +84,7 @@ export function validateCustomerRow(input: CustomerRowInput, bundles: Bundle[]):
       backupPhone,
       bundle,
       status: normalizeStatus(input.status),
-      bundleExpiry: "",
+      bundleExpiry: bundleExpiryDate ? dateToInputValue(bundleExpiryDate) : "",
       bundleId,
     },
     createdAt: parseRowDate(input.createdAt),

@@ -182,6 +182,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                         <th className="px-3 py-2">{t.importColName}</th>
                         <th className="px-3 py-2">{t.importColMainPhone}</th>
                         <th className="px-3 py-2">{t.importColBundle}</th>
+                        <th className="px-3 py-2">{t.importColBundleExpiry}</th>
                         <th className="px-3 py-2">{t.importColAssignedBundle}</th>
                         <th className="px-3 py-2">{t.importColStatus}</th>
                         <th className="px-3 py-2">{t.importColRow}</th>
@@ -195,6 +196,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                           </td>
                           <td className="px-3 py-2 text-ink-700">{row.data.mainPhone || "—"}</td>
                           <td className="px-3 py-2 text-ink-700">{row.data.bundle || "—"}</td>
+                          <td className="px-3 py-2 text-ink-700">{row.data.bundleExpiry || "—"}</td>
                           <td className="px-3 py-2">
                             {row.data.bundleId ? (
                               <span className="text-ink-700">

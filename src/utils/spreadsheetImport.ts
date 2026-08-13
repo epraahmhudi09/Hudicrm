@@ -13,6 +13,7 @@ export const IMPORT_TEMPLATE_HEADERS = [
   "Bundle",
   "Status",
   "Created Date",
+  "Bundle Expiry",
   "Assigned Bundle",
 ];
 
@@ -39,6 +40,11 @@ const HEADER_ALIASES: Record<string, keyof CustomerRowInput> = {
   date: "createdAt",
   joindate: "createdAt",
   signupdate: "createdAt",
+  bundleexpiry: "bundleExpiry",
+  expirydate: "bundleExpiry",
+  expiry: "bundleExpiry",
+  expiresat: "bundleExpiry",
+  renewaldate: "bundleExpiry",
   assignedbundle: "assignedBundle",
   bundleassigned: "assignedBundle",
   assigned: "assignedBundle",
@@ -142,14 +148,15 @@ function tableToValidatedRows(table: (string | Date)[][], bundles: Bundle[]): Va
         bundle: "",
         status: "",
         createdAt: "",
+        bundleExpiry: "",
         assignedBundle: "",
       };
 
       row.forEach((cell, i) => {
         const key = keys[i];
         if (!key) return;
-        if (key === "createdAt") {
-          input.createdAt = cell;
+        if (key === "createdAt" || key === "bundleExpiry") {
+          input[key] = cell;
         } else {
           input[key] = String(cell);
         }
@@ -180,6 +187,7 @@ export async function downloadImportTemplate(bundles: Bundle[]): Promise<void> {
     "VIP Pro",
     "loyal",
     "2026-01-15",
+    "2026-09-15",
     bundles[0]?.name || "",
   ]);
   sheet.getRow(1).font = { bold: true };
