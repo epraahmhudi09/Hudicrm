@@ -79,7 +79,7 @@ service cloud.firestore {
         isNonEmptyString(data.bundle) &&
         isValidStatus(data.status) &&
         isValidBundleExpiry(data.bundleExpiry) &&
-        isValidBundleExpiry(data.lastExpiryAlertSentFor) &&
+        (!('lastExpiryAlertSentFor' in data) || isValidBundleExpiry(data.lastExpiryAlertSentFor)) &&
         isValidTopupAmount(data) &&
         (!('bundleId' in data) || isValidBundleId(data.bundleId)) &&
         data.createdAt == resource.data.createdAt &&
