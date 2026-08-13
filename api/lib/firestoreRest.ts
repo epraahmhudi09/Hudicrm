@@ -141,3 +141,31 @@ export async function updateFields(path: string, data: Record<string, unknown>):
     body: JSON.stringify({ fields: encodeFields(data) }),
   });
 }
+
+/**
+ * Atomically increments numeric fields on a document (creating them,
+ * starting from 0, if absent). Unlike updateFields' plain overwrite, this is
+ * safe under concurrent webhook calls — two simultaneous top-ups both land
+ * instead of one clobbering the other's read-modify-write.
+ */
+export async function incrementFields(
+  path: string,
+  increments: Record<string, number>
+): Promise<void> {
+  await authFetch(`${base()}:commit`, {
+    method: "POST",
+    body: JSON.stringify({
+      writes: [
+        {
+          transform: {
+            document: `projects/${getServiceAccount().project_id}/databases/(default)/documents/${path}`,
+            fieldTransforms: Object.entries(increments).map(([fieldPath, value]) => ({
+              fieldPath,
+              increment: encodeValue(value),
+            })),
+          },
+        },
+      ],
+    }),
+  });
+}

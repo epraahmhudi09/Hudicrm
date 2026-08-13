@@ -31,16 +31,27 @@ service cloud.firestore {
       return value == null || value is timestamp;
     }
 
+    // Optional — absent on customers who have never had a matched top-up,
+    // and only ever written server-side by the SMS webhook (via a service
+    // account, which bypasses these rules) using an atomic increment. Client
+    // edits still need to be allowed to pass it through unchanged, same as
+    // lastExpiryAlertSentFor below.
+    function isValidTopupAmount(data) {
+      return !('totalTopupAmount' in data) ||
+        (data.totalTopupAmount is number && data.totalTopupAmount >= 0);
+    }
+
     function hasValidCustomerSchema(data) {
       return data.keys().hasOnly(
           ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
-           'lastExpiryAlertSentFor', 'createdAt', 'updatedAt']) &&
+           'lastExpiryAlertSentFor', 'totalTopupAmount', 'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
         isNonEmptyString(data.bundle) &&
         isValidStatus(data.status) &&
         isValidBundleExpiry(data.bundleExpiry) &&
+        isValidTopupAmount(data) &&
         isValidCreatedAt(data.createdAt) &&
         data.updatedAt == request.time;
     }
@@ -52,7 +63,7 @@ service cloud.firestore {
     function hasValidCustomerUpdate(data) {
       return data.keys().hasOnly(
           ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
-           'lastExpiryAlertSentFor', 'createdAt', 'updatedAt']) &&
+           'lastExpiryAlertSentFor', 'totalTopupAmount', 'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -60,6 +71,7 @@ service cloud.firestore {
         isValidStatus(data.status) &&
         isValidBundleExpiry(data.bundleExpiry) &&
         isValidBundleExpiry(data.lastExpiryAlertSentFor) &&
+        isValidTopupAmount(data) &&
         data.createdAt == resource.data.createdAt &&
         data.updatedAt == request.time;
     }
@@ -136,6 +148,40 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && hasValidDebtCustomerSchema(request.resource.data);
       allow update: if isSignedIn() && hasValidDebtCustomerUpdate(request.resource.data);
+      allow delete: if isSignedIn();
+    }
+
+    // Staff-managed pricing tiers ($ amount -> how long the bundle lasts).
+    // Read by the SMS webhook (via a service account, which bypasses these
+    // rules) to compute bundleExpiry on each top-up.
+    function isValidDurationUnit(value) {
+      return value is string && (value == 'hours' || value == 'days' || value == 'months');
+    }
+
+    function hasValidBundleSchema(data) {
+      return data.keys().hasOnly(['name', 'amount', 'durationValue', 'durationUnit', 'createdAt', 'updatedAt']) &&
+        isOptionalString(data.name) &&
+        data.amount is number && data.amount > 0 &&
+        data.durationValue is number && data.durationValue > 0 &&
+        isValidDurationUnit(data.durationUnit) &&
+        isValidCreatedAt(data.createdAt) &&
+        data.updatedAt == request.time;
+    }
+
+    function hasValidBundleUpdate(data) {
+      return data.keys().hasOnly(['name', 'amount', 'durationValue', 'durationUnit', 'createdAt', 'updatedAt']) &&
+        isOptionalString(data.name) &&
+        data.amount is number && data.amount > 0 &&
+        data.durationValue is number && data.durationValue > 0 &&
+        isValidDurationUnit(data.durationUnit) &&
+        data.createdAt == resource.data.createdAt &&
+        data.updatedAt == request.time;
+    }
+
+    match /bundles/{bundleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && hasValidBundleSchema(request.resource.data);
+      allow update: if isSignedIn() && hasValidBundleUpdate(request.resource.data);
       allow delete: if isSignedIn();
     }
 

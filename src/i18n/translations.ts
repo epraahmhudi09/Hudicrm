@@ -174,6 +174,55 @@ export interface Translations {
   deleteDebtCustomerMessage: (name: string) => string;
   couldntLoadDebtCustomers: string;
   debtSearchPlaceholder: string;
+
+  navBundles: string;
+  navExpiredBundles: string;
+  navAnalytics: string;
+
+  bundlesTitle: string;
+  bundlesSubtitle: string;
+  addBundle: string;
+  editBundle: string;
+  fieldBundleName: string;
+  fieldBundleNamePlaceholder: string;
+  fieldPrice: string;
+  fieldPricePlaceholder: string;
+  fieldDurationValue: string;
+  fieldDurationValuePlaceholder: string;
+  fieldDurationUnit: string;
+  durationUnitHours: string;
+  durationUnitDays: string;
+  durationUnitMonths: string;
+  bundleColName: string;
+  bundleColPrice: string;
+  bundleColDuration: string;
+  bundleColActions: string;
+  bundleEmptyTitle: string;
+  bundleEmptySubtitle: string;
+  loadDefaultPricing: string;
+  deleteBundleTitle: string;
+  deleteBundleMessage: (name: string) => string;
+  couldntLoadBundles: string;
+  priceRequired: string;
+  priceInvalid: string;
+  durationRequired: string;
+  durationInvalid: string;
+
+  expiredBundlesTitle: string;
+  expiredBundlesSubtitle: string;
+  colDaysOverdue: string;
+  daysOverdue: (n: number) => string;
+  expiredEmptyTitle: string;
+  expiredEmptySubtitle: string;
+
+  analyticsTitle: string;
+  analyticsSubtitle: string;
+  topSpendersTitle: string;
+  lowSpendersTitle: string;
+  totalTopupVolume: string;
+  customersWithTopups: string;
+  avgTopupPerCustomer: string;
+  noTopupsYet: string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -359,6 +408,57 @@ export const translations: Record<"en" | "so", Translations> = {
       `This will permanently remove "${name}" from your debt customer list. This action cannot be undone.`,
     couldntLoadDebtCustomers: "Couldn't load debt customers",
     debtSearchPlaceholder: "Search name or phone...",
+
+    navBundles: "Bundles",
+    navExpiredBundles: "Expired Bundles",
+    navAnalytics: "Analytics",
+
+    bundlesTitle: "Bundles",
+    bundlesSubtitle:
+      "Manage the pricing tiers used to auto-renew customer bundles from EVC top-up SMS.",
+    addBundle: "Add Bundle",
+    editBundle: "Edit Bundle",
+    fieldBundleName: "Package Name",
+    fieldBundleNamePlaceholder: "e.g. Unlimited",
+    fieldPrice: "Price ($)",
+    fieldPricePlaceholder: "0.25",
+    fieldDurationValue: "Duration",
+    fieldDurationValuePlaceholder: "10",
+    fieldDurationUnit: "Unit",
+    durationUnitHours: "Hours",
+    durationUnitDays: "Days",
+    durationUnitMonths: "Months",
+    bundleColName: "Package",
+    bundleColPrice: "Price",
+    bundleColDuration: "Duration",
+    bundleColActions: "Actions",
+    bundleEmptyTitle: "No bundles registered yet",
+    bundleEmptySubtitle: "Add pricing tiers, or load the current defaults to get started.",
+    loadDefaultPricing: "Load Default Pricing",
+    deleteBundleTitle: "Delete bundle?",
+    deleteBundleMessage: (name) =>
+      `This will permanently remove "${name}" from your bundle list. Top-ups at this price will no longer auto-renew until you add it back. This action cannot be undone.`,
+    couldntLoadBundles: "Couldn't load bundles",
+    priceRequired: "Price is required.",
+    priceInvalid: "Enter a valid price.",
+    durationRequired: "Duration is required.",
+    durationInvalid: "Enter a valid duration.",
+
+    expiredBundlesTitle: "Expired Bundles",
+    expiredBundlesSubtitle: "Customers whose bundle has lapsed and who haven't topped up since.",
+    colDaysOverdue: "Overdue",
+    daysOverdue: (n) => (n === 0 ? "Expired today" : n === 1 ? "1 day overdue" : `${n} days overdue`),
+    expiredEmptyTitle: "No expired bundles",
+    expiredEmptySubtitle: "Every customer with a tracked bundle is currently up to date.",
+
+    analyticsTitle: "Analytics",
+    analyticsSubtitle: "See who's topping up the most — and who might need a nudge.",
+    topSpendersTitle: "Top Spenders",
+    lowSpendersTitle: "Lowest Spenders",
+    totalTopupVolume: "Total Top-up Volume",
+    customersWithTopups: "Customers With Top-ups",
+    avgTopupPerCustomer: "Avg. per Customer",
+    noTopupsYet: "No top-ups recorded yet.",
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -543,6 +643,58 @@ export const translations: Record<"en" | "so", Translations> = {
       `Tan waxay si joogto ah uga saarayaa "${name}" liiska macaamiisha deynta. Ficilkan lama soo celin karo.`,
     couldntLoadDebtCustomers: "Macaamiisha deynta lama soo geli karin",
     debtSearchPlaceholder: "Raadi magaca ama telefoonka...",
+
+    navBundles: "Bundle-yada",
+    navExpiredBundles: "Bundle-yada Dhacay",
+    navAnalytics: "Falanqaynta",
+
+    bundlesTitle: "Bundle-yada",
+    bundlesSubtitle:
+      "Maamul heerarka qiimaha ee si toos ah loogu cusboonaysiiyo bundle-ka macaamiisha marka SMS-ka EVC-ka la helo.",
+    addBundle: "Ku Dar Bundle",
+    editBundle: "Wax ka Beddel Bundle-ka",
+    fieldBundleName: "Magaca Baakadda",
+    fieldBundleNamePlaceholder: "tusaale: Unlimited",
+    fieldPrice: "Qiimaha ($)",
+    fieldPricePlaceholder: "0.25",
+    fieldDurationValue: "Muddada",
+    fieldDurationValuePlaceholder: "10",
+    fieldDurationUnit: "Cabbirka",
+    durationUnitHours: "Saacadood",
+    durationUnitDays: "Maalmood",
+    durationUnitMonths: "Bilood",
+    bundleColName: "Baakadda",
+    bundleColPrice: "Qiimaha",
+    bundleColDuration: "Muddada",
+    bundleColActions: "Ficillada",
+    bundleEmptyTitle: "Weli bundle lama diiwaan gelin",
+    bundleEmptySubtitle: "Ku dar heerarka qiimaha, ama soo rar qiimayaasha hadda jira si aad u bilowdo.",
+    loadDefaultPricing: "Soo Rar Qiimayaasha Hadda Jira",
+    deleteBundleTitle: "Bundle-ka tirtir?",
+    deleteBundleMessage: (name) =>
+      `Tan waxay si joogto ah uga saarayaa "${name}" liiska bundle-yadaada. Lacagaha qiimahan lagu shubto mar dambe si toos ah uma cusboonaysiin doonaan ilaa aad mar kale ku darto. Ficilkan lama soo celin karo.`,
+    couldntLoadBundles: "Bundle-yada lama soo geli karin",
+    priceRequired: "Qiimaha waa lagama maarmaan.",
+    priceInvalid: "Geli qiime sax ah.",
+    durationRequired: "Muddada waa lagama maarmaan.",
+    durationInvalid: "Geli muddo sax ah.",
+
+    expiredBundlesTitle: "Bundle-yada Dhacay",
+    expiredBundlesSubtitle: "Macaamiisha bundle-kooda dhacay oo aan tan iyo markaas wax lagu shubin.",
+    colDaysOverdue: "Dhacay",
+    daysOverdue: (n) =>
+      n === 0 ? "Maanta ayay dhacday" : n === 1 ? "1 maalin ayay dhacday" : `${n} maalmood ayay dhacday`,
+    expiredEmptyTitle: "Bundle dhacay ma jiraan",
+    expiredEmptySubtitle: "Dhammaan macaamiisha bundle-ka leh waa la cusboonaysiiyay.",
+
+    analyticsTitle: "Falanqaynta",
+    analyticsSubtitle: "Arag cida ugu badan shubasho — iyo cida u baahan xasuusin.",
+    topSpendersTitle: "Kuwa Ugu Shubashada Badan",
+    lowSpendersTitle: "Kuwa Ugu Shubashada Yar",
+    totalTopupVolume: "Wadarta Lacagta la Shubtay",
+    customersWithTopups: "Macaamiisha Wax Shubay",
+    avgTopupPerCustomer: "Celceliska Macmiil Kasta",
+    noTopupsYet: "Weli lacag lama shubin.",
   },
 };
 

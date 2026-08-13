@@ -6,6 +6,9 @@ import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
 import Sidebar, { type AppView } from "./components/layout/Sidebar";
 import DebtCustomersView from "./components/debtCustomers/DebtCustomersView";
+import ExpiredBundlesView from "./components/expiredBundles/ExpiredBundlesView";
+import BundlesView from "./components/bundles/BundlesView";
+import AnalyticsView from "./components/analytics/AnalyticsView";
 import StatsOverview from "./components/dashboard/StatsOverview";
 import SearchFilterBar from "./components/customers/SearchFilterBar";
 import CustomerTable from "./components/customers/CustomerTable";
@@ -243,8 +246,14 @@ function Dashboard() {
               />
             )}
           </>
-        ) : (
+        ) : view === "debtCustomers" ? (
           <DebtCustomersView />
+        ) : view === "expiredBundles" ? (
+          <ExpiredBundlesView />
+        ) : view === "bundles" ? (
+          <BundlesView />
+        ) : (
+          <AnalyticsView />
         )}
       </main>
 

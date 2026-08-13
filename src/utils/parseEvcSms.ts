@@ -69,24 +69,46 @@ function addMonths(date: Date, months: number): Date {
   return result;
 }
 
+export type DurationUnit = "hours" | "days" | "months";
+
+export interface BundleTier {
+  amount: number;
+  durationValue: number;
+  durationUnit: DurationUnit;
+}
+
+function applyDuration(date: Date, value: number, unit: DurationUnit): Date {
+  if (unit === "hours") return addHours(date, value);
+  if (unit === "days") return addHours(date, value * 24);
+  return addMonths(date, value);
+}
+
 // Business rules confirmed by the customer — pricing is tiered, not a flat
 // rate per dollar (e.g. $0.25 and $1 both work out to different effective
-// hourly rates), so this is a lookup table rather than a formula.
-const BUNDLE_TIERS: Array<{ amount: number; expiryFrom: (occurredAt: Date) => Date }> = [
-  { amount: 0.25, expiryFrom: (d) => addHours(d, 10) },
-  { amount: 0.5, expiryFrom: (d) => addHours(d, 36) },
-  { amount: 1, expiryFrom: (d) => addHours(d, 3 * 24) },
-  { amount: 2.5, expiryFrom: (d) => addHours(d, 7 * 24) },
-  { amount: 10, expiryFrom: (d) => addMonths(d, 1) },
+// hourly rates), so this is a lookup table rather than a formula. Staff can
+// now manage this list from the Bundles page (stored in Firestore); this
+// constant is only the fallback used when that collection is empty, so
+// behavior is unchanged for anyone who hasn't set up custom tiers yet.
+export const DEFAULT_BUNDLE_TIERS: BundleTier[] = [
+  { amount: 0.25, durationValue: 10, durationUnit: "hours" },
+  { amount: 0.5, durationValue: 36, durationUnit: "hours" },
+  { amount: 1, durationValue: 3, durationUnit: "days" },
+  { amount: 2.5, durationValue: 7, durationUnit: "days" },
+  { amount: 10, durationValue: 1, durationUnit: "months" },
 ];
 
 /**
  * Computes when a bundle purchased in this transaction should expire, based
- * on the confirmed pricing tiers. Returns null for an amount that doesn't
+ * on the given pricing tiers (falls back to DEFAULT_BUNDLE_TIERS if none are
+ * supplied or the list is empty). Returns null for an amount that doesn't
  * exactly match a known tier — callers should still log the top-up but
  * leave bundleExpiry untouched rather than guess.
  */
-export function bundleExpiryFor(transaction: EvcTopupTransaction): Date | null {
-  const tier = BUNDLE_TIERS.find((t) => Math.abs(t.amount - transaction.amount) < 0.001);
-  return tier ? tier.expiryFrom(transaction.occurredAt) : null;
+export function bundleExpiryFor(
+  transaction: EvcTopupTransaction,
+  tiers: BundleTier[] = DEFAULT_BUNDLE_TIERS
+): Date | null {
+  const source = tiers.length > 0 ? tiers : DEFAULT_BUNDLE_TIERS;
+  const tier = source.find((t) => Math.abs(t.amount - transaction.amount) < 0.001);
+  return tier ? applyDuration(transaction.occurredAt, tier.durationValue, tier.durationUnit) : null;
 }

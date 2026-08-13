@@ -1,6 +1,26 @@
-import { listCollection, setDocument, updateFields } from "./lib/firestoreRest.js";
+import { incrementFields, listCollection, setDocument, updateFields } from "./lib/firestoreRest.js";
 import type { VercelRequest, VercelResponse } from "./lib/types.js";
-import { bundleExpiryFor, parseEvcSms } from "../src/utils/parseEvcSms.js";
+import { bundleExpiryFor, parseEvcSms, type BundleTier, type DurationUnit } from "../src/utils/parseEvcSms.js";
+
+const DURATION_UNITS: DurationUnit[] = ["hours", "days", "months"];
+
+function isDurationUnit(value: unknown): value is DurationUnit {
+  return typeof value === "string" && (DURATION_UNITS as string[]).includes(value);
+}
+
+/** Reads staff-managed bundle tiers from Firestore, skipping any malformed docs. */
+async function loadBundleTiers(): Promise<BundleTier[]> {
+  const docs = await listCollection("bundles");
+  const tiers: BundleTier[] = [];
+  for (const doc of docs) {
+    const amount = Number(doc.amount);
+    const durationValue = Number(doc.durationValue);
+    if (Number.isFinite(amount) && Number.isFinite(durationValue) && isDurationUnit(doc.durationUnit)) {
+      tiers.push({ amount, durationValue, durationUnit: doc.durationUnit });
+    }
+  }
+  return tiers;
+}
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "").slice(-9);
@@ -60,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const normalizedTarget = normalizePhone(transaction.phone);
-    const customers = await listCollection("customers");
+    const [customers, tiers] = await Promise.all([listCollection("customers"), loadBundleTiers()]);
     const match = customers.find(
       (c) =>
         normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
@@ -73,16 +93,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Auto-renew: a top-up resets the bundle's validity window from the SMS
-    // timestamp, per the confirmed pricing tiers. This also naturally
-    // re-arms the 24h expiry alert, since check-expiry only re-notifies
-    // when bundleExpiry differs from the last value it alerted on — no
-    // separate reset of lastExpiryAlertSentFor needed here. An amount
-    // outside the known tiers still gets logged, just without touching
-    // bundleExpiry, so nothing is silently guessed.
-    const newExpiry = bundleExpiryFor(transaction);
+    // timestamp, per the staff-managed pricing tiers (Bundles page), falling
+    // back to the confirmed defaults if that collection is empty. This also
+    // naturally re-arms the 24h expiry alert, since check-expiry only
+    // re-notifies when bundleExpiry differs from the last value it alerted
+    // on — no separate reset of lastExpiryAlertSentFor needed here. An
+    // amount outside the known tiers still gets logged, just without
+    // touching bundleExpiry, so nothing is silently guessed.
+    const newExpiry = bundleExpiryFor(transaction, tiers);
     if (newExpiry) {
       await updateFields(`customers/${match.id}`, { bundleExpiry: newExpiry });
     }
+
+    // Tracked separately from bundleExpiry so Analytics can rank customers
+    // by total spend even when an amount doesn't map to a known tier.
+    await incrementFields(`customers/${match.id}`, { totalTopupAmount: transaction.amount });
 
     const renewalNote = newExpiry
       ? ` Bundle renewed until ${newExpiry.toISOString()}.`

@@ -12,6 +12,12 @@ export interface Customer {
   bundleExpiry: Timestamp | null;
   /** Set by the scheduled Cloud Function — never written by the client. */
   lastExpiryAlertSentFor: Timestamp | null;
+  /**
+   * Running total of EVC top-up amounts credited to this customer, in
+   * dollars. Incremented atomically by the SMS webhook — absent (undefined)
+   * on customers who have never had a matched top-up; treat as 0.
+   */
+  totalTopupAmount?: number;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
 }

@@ -1,9 +1,9 @@
 import { type ReactNode } from "react";
-import { Users, Wallet, X } from "lucide-react";
+import { BarChart3, CalendarX2, Package, Users, Wallet, X } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import Logo from "./Logo";
 
-export type AppView = "customers" | "debtCustomers";
+export type AppView = "customers" | "debtCustomers" | "expiredBundles" | "bundles" | "analytics";
 
 interface SidebarProps {
   open: boolean;
@@ -18,6 +18,9 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
   const items: Array<{ key: AppView; label: string; icon: ReactNode }> = [
     { key: "customers", label: t.navCustomers, icon: <Users size={18} /> },
     { key: "debtCustomers", label: t.navDebtCustomers, icon: <Wallet size={18} /> },
+    { key: "expiredBundles", label: t.navExpiredBundles, icon: <CalendarX2 size={18} /> },
+    { key: "bundles", label: t.navBundles, icon: <Package size={18} /> },
+    { key: "analytics", label: t.navAnalytics, icon: <BarChart3 size={18} /> },
   ];
 
   return (
