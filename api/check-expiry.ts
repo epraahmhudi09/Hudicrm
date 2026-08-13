@@ -48,18 +48,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map((u) => u.fcmToken as string | undefined)
       .filter((t): t is string => Boolean(t));
 
+    // One combined notification listing who's overdue, instead of a
+    // separate push per customer — much more useful when several lapse
+    // around the same time (staff see the whole picture in one glance
+    // instead of a flood of near-identical notifications).
+    const names = dueForAlert.map((doc) => String(doc.name ?? "Customer"));
+    const namesPreview =
+      names.length <= 3 ? names.join(", ") : `${names.slice(0, 3).join(", ")} +${names.length - 3} more`;
+
     let notified = 0;
+    if (tokens.length > 0) {
+      const result = await sendPushToTokens(tokens, {
+        title: `${dueForAlert.length} bundle${dueForAlert.length === 1 ? "" : "s"} expired 24h+ ago`,
+        body: `${namesPreview} — please follow up.`,
+      });
+      if (result.successCount > 0) notified = dueForAlert.length;
+    }
+
     for (const doc of dueForAlert) {
-      const name = String(doc.name ?? "Customer");
-
-      if (tokens.length > 0) {
-        const result = await sendPushToTokens(tokens, {
-          title: "Bundle expired 24h+ ago",
-          body: `${name}'s bundle expired more than 24 hours ago and hasn't been renewed.`,
-        });
-        if (result.successCount > 0) notified++;
-      }
-
       await updateFields(`customers/${doc.id}`, { lastExpiryAlertSentFor: doc.bundleExpiry as Date });
     }
 
