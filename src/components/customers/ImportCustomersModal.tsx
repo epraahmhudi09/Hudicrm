@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import {
   X,
   UploadCloud,
@@ -11,6 +11,8 @@ import {
 import { bulkAddCustomers } from "../../services/customerService";
 import { downloadImportTemplate, parseSpreadsheetFile } from "../../utils/spreadsheetImport";
 import type { ValidatedCustomerRow } from "../../utils/customerValidation";
+import { getBundlesRealtime } from "../../services/bundleService";
+import type { Bundle } from "../../types/bundle";
 import StatusBadge from "./StatusBadge";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -27,6 +29,12 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
   const [rows, setRows] = useState<ValidatedCustomerRow[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [importedCount, setImportedCount] = useState(0);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = getBundlesRealtime(setBundles);
+    return unsubscribe;
+  }, []);
 
   const validRows = rows.filter((r) => r.errors.length === 0);
   const invalidCount = rows.length - validRows.length;
@@ -40,7 +48,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
     setParseError(null);
 
     try {
-      const parsed = await parseSpreadsheetFile(file);
+      const parsed = await parseSpreadsheetFile(file, bundles);
       if (parsed.length === 0) {
         setParseError("No data rows found. Make sure the first row contains column headers.");
         return;
@@ -123,7 +131,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
 
               <button
                 type="button"
-                onClick={() => void downloadImportTemplate()}
+                onClick={() => void downloadImportTemplate(bundles)}
                 className="flex items-center gap-2 text-sm font-medium text-amtel-600 transition hover:text-amtel-700"
               >
                 <Download size={14} />
@@ -174,6 +182,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                         <th className="px-3 py-2">{t.importColName}</th>
                         <th className="px-3 py-2">{t.importColMainPhone}</th>
                         <th className="px-3 py-2">{t.importColBundle}</th>
+                        <th className="px-3 py-2">{t.importColAssignedBundle}</th>
                         <th className="px-3 py-2">{t.importColStatus}</th>
                         <th className="px-3 py-2">{t.importColRow}</th>
                       </tr>
@@ -186,6 +195,20 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
                           </td>
                           <td className="px-3 py-2 text-ink-700">{row.data.mainPhone || "—"}</td>
                           <td className="px-3 py-2 text-ink-700">{row.data.bundle || "—"}</td>
+                          <td className="px-3 py-2">
+                            {row.data.bundleId ? (
+                              <span className="text-ink-700">
+                                {bundles.find((b) => b.id === row.data.bundleId)?.name || "—"}
+                              </span>
+                            ) : row.assignedBundleMatched ? (
+                              <span className="text-ink-400">—</span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-amber-600">
+                                <XCircle size={12} />
+                                {t.importAssignedBundleNotMatched}
+                              </span>
+                            )}
+                          </td>
                           <td className="px-3 py-2">
                             <StatusBadge status={row.data.status} />
                           </td>

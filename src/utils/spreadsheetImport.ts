@@ -4,6 +4,7 @@ import {
   type CustomerRowInput,
   type ValidatedCustomerRow,
 } from "./customerValidation";
+import type { Bundle } from "../types/bundle";
 
 export const IMPORT_TEMPLATE_HEADERS = [
   "Name",
@@ -12,6 +13,7 @@ export const IMPORT_TEMPLATE_HEADERS = [
   "Bundle",
   "Status",
   "Created Date",
+  "Assigned Bundle",
 ];
 
 const HEADER_ALIASES: Record<string, keyof CustomerRowInput> = {
@@ -37,6 +39,10 @@ const HEADER_ALIASES: Record<string, keyof CustomerRowInput> = {
   date: "createdAt",
   joindate: "createdAt",
   signupdate: "createdAt",
+  assignedbundle: "assignedBundle",
+  bundleassigned: "assignedBundle",
+  assigned: "assignedBundle",
+  autorenewalbundle: "assignedBundle",
 };
 
 function normalizeHeader(header: string): string {
@@ -119,7 +125,7 @@ function parseCsv(text: string): string[][] {
   return rows;
 }
 
-function tableToValidatedRows(table: (string | Date)[][]): ValidatedCustomerRow[] {
+function tableToValidatedRows(table: (string | Date)[][], bundles: Bundle[]): ValidatedCustomerRow[] {
   if (table.length === 0) return [];
   const [headerRow, ...dataRows] = table;
   const keys: Array<keyof CustomerRowInput | null> = headerRow.map(
@@ -136,6 +142,7 @@ function tableToValidatedRows(table: (string | Date)[][]): ValidatedCustomerRow[
         bundle: "",
         status: "",
         createdAt: "",
+        assignedBundle: "",
       };
 
       row.forEach((cell, i) => {
@@ -148,17 +155,20 @@ function tableToValidatedRows(table: (string | Date)[][]): ValidatedCustomerRow[
         }
       });
 
-      return validateCustomerRow(input);
+      return validateCustomerRow(input, bundles);
     });
 }
 
-export async function parseSpreadsheetFile(file: File): Promise<ValidatedCustomerRow[]> {
+export async function parseSpreadsheetFile(
+  file: File,
+  bundles: Bundle[]
+): Promise<ValidatedCustomerRow[]> {
   const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
   const table = isCsv ? parseCsv(await file.text()) : await parseXlsx(await file.arrayBuffer());
-  return tableToValidatedRows(table);
+  return tableToValidatedRows(table, bundles);
 }
 
-export async function downloadImportTemplate(): Promise<void> {
+export async function downloadImportTemplate(bundles: Bundle[]): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Customers");
 
@@ -170,6 +180,7 @@ export async function downloadImportTemplate(): Promise<void> {
     "VIP Pro",
     "loyal",
     "2026-01-15",
+    bundles[0]?.name || "",
   ]);
   sheet.getRow(1).font = { bold: true };
   sheet.columns.forEach((col) => {

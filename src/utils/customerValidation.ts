@@ -1,4 +1,5 @@
 import type { CustomerFormData, CustomerStatus } from "../types/customer";
+import type { Bundle } from "../types/bundle";
 
 export const PHONE_PATTERN = /^[+]?[0-9\s\-()]{7,20}$/;
 
@@ -9,12 +10,16 @@ export interface CustomerRowInput {
   bundle: string;
   status: string;
   createdAt: string | Date;
+  /** Free-text bundle name from the spreadsheet, resolved by name against the live Bundles registry. */
+  assignedBundle: string;
 }
 
 export interface ValidatedCustomerRow {
   data: CustomerFormData;
   createdAt: Date | null;
   errors: string[];
+  /** false only when assignedBundle text was given but didn't match any registered bundle name. */
+  assignedBundleMatched: boolean;
 }
 
 export function normalizeStatus(value: string): CustomerStatus {
@@ -28,7 +33,7 @@ export function parseRowDate(value: string | Date | null | undefined): Date | nu
   return isNaN(parsed.getTime()) ? null : parsed;
 }
 
-export function validateCustomerRow(input: CustomerRowInput): ValidatedCustomerRow {
+export function validateCustomerRow(input: CustomerRowInput, bundles: Bundle[]): ValidatedCustomerRow {
   const errors: string[] = [];
   const name = input.name.trim();
   const mainPhone = input.mainPhone.trim();
@@ -49,6 +54,20 @@ export function validateCustomerRow(input: CustomerRowInput): ValidatedCustomerR
 
   if (!bundle) errors.push("Bundle / plan is required.");
 
+  const assignedBundleText = input.assignedBundle.trim();
+  let bundleId = "";
+  let assignedBundleMatched = true;
+  if (assignedBundleText) {
+    const match = bundles.find(
+      (b) => b.name.trim().toLowerCase() === assignedBundleText.toLowerCase()
+    );
+    if (match) {
+      bundleId = match.id;
+    } else {
+      assignedBundleMatched = false;
+    }
+  }
+
   return {
     data: {
       name,
@@ -57,9 +76,10 @@ export function validateCustomerRow(input: CustomerRowInput): ValidatedCustomerR
       bundle,
       status: normalizeStatus(input.status),
       bundleExpiry: "",
-      bundleId: "",
+      bundleId,
     },
     createdAt: parseRowDate(input.createdAt),
     errors,
+    assignedBundleMatched,
   };
 }

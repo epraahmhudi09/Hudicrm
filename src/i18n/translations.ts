@@ -108,6 +108,8 @@ export interface Translations {
   importColName: string;
   importColMainPhone: string;
   importColBundle: string;
+  importColAssignedBundle: string;
+  importAssignedBundleNotMatched: string;
   importColStatus: string;
   importColRow: string;
   importValid: string;
@@ -333,7 +335,7 @@ export const translations: Record<"en" | "so", Translations> = {
 
     importTitle: "Import Customers",
     importInstructions:
-      "Upload an Excel (.xlsx) or CSV file to bulk-add customers. The first row must contain column headers — Name, Main Phone, Backup Phone, Bundle, Status, and Created Date are recognized automatically.",
+      "Upload an Excel (.xlsx) or CSV file to bulk-add customers. The first row must contain column headers — Name, Main Phone, Backup Phone, Bundle, Status, Created Date, and Assigned Bundle are recognized automatically. Assigned Bundle should exactly match a package name from the Bundles page (used for SMS auto-renewal matching); leave it blank to skip.",
     importChooseFile: "Click to choose a file",
     importFileTypes: ".xlsx or .csv",
     importDownloadTemplate: "Download a template spreadsheet",
@@ -344,6 +346,8 @@ export const translations: Record<"en" | "so", Translations> = {
     importColName: "Name",
     importColMainPhone: "Main Phone",
     importColBundle: "Bundle",
+    importColAssignedBundle: "Assigned Bundle",
+    importAssignedBundleNotMatched: "Not matched",
     importColStatus: "Status",
     importColRow: "Row",
     importValid: "Valid",
@@ -573,7 +577,7 @@ export const translations: Record<"en" | "so", Translations> = {
 
     importTitle: "Soo Deji Macaamiisha",
     importInstructions:
-      "Soo geli fayl Excel (.xlsx) ah ama CSV ah si aad tiro badan oo macaamiil ah u darto. Safka koowaad waa inuu ka kooban yahay magacyada tiirarka — Magaca, Telefoonka Koowaad, Telefoonka Labaad, Baaqiga, Xaaladda, iyo Taariikhda waa la aqoonsan doonaa si toos ah.",
+      "Soo geli fayl Excel (.xlsx) ah ama CSV ah si aad tiro badan oo macaamiil ah u darto. Safka koowaad waa inuu ka kooban yahay magacyada tiirarka — Magaca, Telefoonka Koowaad, Telefoonka Labaad, Baaqiga, Xaaladda, Taariikhda, iyo Assigned Bundle waa la aqoonsan doonaa si toos ah. Assigned Bundle waa in ay si sax ah ula mid tahay magaca baakadda ee bogga Bundles (waxaa loo isticmaalaa automation-ka SMS-ka) — ka madhi haddii aadan rabin.",
     importChooseFile: "Riix si aad fayl u doorato",
     importFileTypes: ".xlsx ama .csv",
     importDownloadTemplate: "Soo deji tijaabo spreadsheet ah",
@@ -584,6 +588,8 @@ export const translations: Record<"en" | "so", Translations> = {
     importColName: "Magaca",
     importColMainPhone: "Telefoonka Koowaad",
     importColBundle: "Baaqiga",
+    importColAssignedBundle: "Assigned Bundle",
+    importAssignedBundleNotMatched: "Lama helin",
     importColStatus: "Xaaladda",
     importColRow: "Saf",
     importValid: "Sax",
