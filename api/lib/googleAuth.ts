@@ -7,7 +7,12 @@ interface ServiceAccount {
 }
 
 let cachedAccount: ServiceAccount | undefined;
-let cachedToken: { value: string; expiresAt: number } | undefined;
+// Keyed by the joined scopes string — a single shared token would otherwise
+// get reused across calls requesting different scopes (e.g. check-expiry
+// asks for the Firestore "datastore" scope and then the FCM "messaging"
+// scope in the same invocation), silently handing out a token that's valid
+// for the wrong API and failing with ACCESS_TOKEN_SCOPE_INSUFFICIENT.
+const cachedTokens = new Map<string, { value: string; expiresAt: number }>();
 
 function base64url(input: Buffer | string): string {
   return Buffer.from(input)
@@ -34,6 +39,8 @@ export function getServiceAccount(): ServiceAccount {
  */
 export async function getAccessToken(scopes: string[]): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
+  const cacheKey = [...scopes].sort().join(" ");
+  const cachedToken = cachedTokens.get(cacheKey);
   if (cachedToken && cachedToken.expiresAt > now + 30) return cachedToken.value;
 
   const account = getServiceAccount();
@@ -70,6 +77,6 @@ export async function getAccessToken(scopes: string[]): Promise<string> {
   }
 
   const json = (await res.json()) as { access_token: string; expires_in: number };
-  cachedToken = { value: json.access_token, expiresAt: now + json.expires_in };
+  cachedTokens.set(cacheKey, { value: json.access_token, expiresAt: now + json.expires_in });
   return json.access_token;
 }
