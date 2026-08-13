@@ -96,10 +96,10 @@ export default function DebtCustomerForm({ debtCustomer, onSubmit, onClose }: De
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl bg-white shadow-xl"
+        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-ink-100 px-5 py-4">
           <h2 className="text-lg font-semibold text-ink-900">
             {isEdit ? t.editDebtCustomer : t.addDebtCustomer}
           </h2>
@@ -112,7 +112,7 @@ export default function DebtCustomerForm({ debtCustomer, onSubmit, onClose }: De
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto px-5 py-5">
           <div>
             <label htmlFor="debtName" className="mb-1.5 block text-sm font-medium text-ink-700">
               {t.fieldName} <span className="text-amtel-600">*</span>
