@@ -57,6 +57,7 @@ export function validateCustomerRow(input: CustomerRowInput): ValidatedCustomerR
       bundle,
       status: normalizeStatus(input.status),
       bundleExpiry: "",
+      bundleId: "",
     },
     createdAt: parseRowDate(input.createdAt),
     errors,

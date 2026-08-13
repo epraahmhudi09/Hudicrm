@@ -119,6 +119,9 @@ export interface Translations {
 
   fieldBundleExpiry: string;
   fieldBundleExpiryHelper: string;
+  fieldAssignedBundle: string;
+  fieldAssignedBundleNone: string;
+  fieldAssignedBundleHelper: string;
   expiryBadgeExpired: string;
   expiryBadgeDays: (n: number) => string;
   statsExpiringSoon: string;
@@ -200,6 +203,7 @@ export interface Translations {
   bundleEmptyTitle: string;
   bundleEmptySubtitle: string;
   loadDefaultPricing: string;
+  loadTanaadBulaalPricing: string;
   deleteBundleTitle: string;
   deleteBundleMessage: (name: string) => string;
   couldntLoadBundles: string;
@@ -351,6 +355,10 @@ export const translations: Record<"en" | "so", Translations> = {
 
     fieldBundleExpiry: "Bundle Expiry",
     fieldBundleExpiryHelper: "Optional. Used to flag upcoming or lapsed renewals.",
+    fieldAssignedBundle: "Assigned Bundle (for auto-renewal)",
+    fieldAssignedBundleNone: "Unassigned",
+    fieldAssignedBundleHelper:
+      "Several packages can share the same price, so this pins which one this customer is on — needed for the SMS top-up automation to renew the right bundle.",
     expiryBadgeExpired: "Expired",
     expiryBadgeDays: (n) => (n === 0 ? "Expires today" : `Expires in ${n}d`),
     statsExpiringSoon: "Expiring Soon",
@@ -435,6 +443,7 @@ export const translations: Record<"en" | "so", Translations> = {
     bundleEmptyTitle: "No bundles registered yet",
     bundleEmptySubtitle: "Add pricing tiers, or load the current defaults to get started.",
     loadDefaultPricing: "Load Default Pricing",
+    loadTanaadBulaalPricing: "Load Tanaad & Bulaal Lite Pricing",
     deleteBundleTitle: "Delete bundle?",
     deleteBundleMessage: (name) =>
       `This will permanently remove "${name}" from your bundle list. Top-ups at this price will no longer auto-renew until you add it back. This action cannot be undone.`,
@@ -586,6 +595,10 @@ export const translations: Record<"en" | "so", Translations> = {
 
     fieldBundleExpiry: "Dhicitaanka Bundle-ka",
     fieldBundleExpiryHelper: "Ikhtiyaari. Waxaa loo isticmaalaa in lagu ogaado dib-u-cusboonaysiin soo socota ama dhacday.",
+    fieldAssignedBundle: "Bundle-ka Loo Xilsaaray (auto-renewal)",
+    fieldAssignedBundleNone: "Lama xilsaarin",
+    fieldAssignedBundleHelper:
+      "Dhowr xirmo ayaa isku qiime yeelan kara, sidaas darteed tan waxay cadaynaysaa kee ka mid ah uu customer-kani qaato — waana lagama maarmaan si automation-ka SMS-ku uu si sax ah bundle-ka ugu cusboonaysiiyo.",
     expiryBadgeExpired: "Way Dhacday",
     expiryBadgeDays: (n) => (n === 0 ? "Maanta ayay dhacaysaa" : `${n} maalmood ayay ku dhacaysaa`),
     statsExpiringSoon: "Dhawaan Dhici Doona",
@@ -670,6 +683,7 @@ export const translations: Record<"en" | "so", Translations> = {
     bundleEmptyTitle: "Weli bundle lama diiwaan gelin",
     bundleEmptySubtitle: "Ku dar heerarka qiimaha, ama soo rar qiimayaasha hadda jira si aad u bilowdo.",
     loadDefaultPricing: "Soo Rar Qiimayaasha Hadda Jira",
+    loadTanaadBulaalPricing: "Soo Rar Qiimaha Tanaad & Bulaal Lite",
     deleteBundleTitle: "Bundle-ka tirtir?",
     deleteBundleMessage: (name) =>
       `Tan waxay si joogto ah uga saarayaa "${name}" liiska bundle-yadaada. Lacagaha qiimahan lagu shubto mar dambe si toos ah uma cusboonaysiin doonaan ilaa aad mar kale ku darto. Ficilkan lama soo celin karo.`,

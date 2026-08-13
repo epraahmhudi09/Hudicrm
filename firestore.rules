@@ -41,10 +41,18 @@ service cloud.firestore {
         (data.totalTopupAmount is number && data.totalTopupAmount >= 0);
     }
 
+    // References a bundles/{id} doc — nullable, and left unvalidated against
+    // the bundles collection itself (Firestore rules can't cross-collection
+    // existence-check affordably); an unresolvable ID just falls back to
+    // the global amount match in the webhook, so a stale reference is safe.
+    function isValidBundleId(value) {
+      return value == null || (value is string && value.size() > 0 && value.size() <= 200);
+    }
+
     function hasValidCustomerSchema(data) {
       return data.keys().hasOnly(
           ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
-           'lastExpiryAlertSentFor', 'totalTopupAmount', 'createdAt', 'updatedAt']) &&
+           'lastExpiryAlertSentFor', 'totalTopupAmount', 'bundleId', 'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -52,6 +60,7 @@ service cloud.firestore {
         isValidStatus(data.status) &&
         isValidBundleExpiry(data.bundleExpiry) &&
         isValidTopupAmount(data) &&
+        (!('bundleId' in data) || isValidBundleId(data.bundleId)) &&
         isValidCreatedAt(data.createdAt) &&
         data.updatedAt == request.time;
     }
@@ -63,7 +72,7 @@ service cloud.firestore {
     function hasValidCustomerUpdate(data) {
       return data.keys().hasOnly(
           ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
-           'lastExpiryAlertSentFor', 'totalTopupAmount', 'createdAt', 'updatedAt']) &&
+           'lastExpiryAlertSentFor', 'totalTopupAmount', 'bundleId', 'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -72,6 +81,7 @@ service cloud.firestore {
         isValidBundleExpiry(data.bundleExpiry) &&
         isValidBundleExpiry(data.lastExpiryAlertSentFor) &&
         isValidTopupAmount(data) &&
+        (!('bundleId' in data) || isValidBundleId(data.bundleId)) &&
         data.createdAt == resource.data.createdAt &&
         data.updatedAt == request.time;
     }

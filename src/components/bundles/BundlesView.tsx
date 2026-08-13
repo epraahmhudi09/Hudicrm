@@ -7,11 +7,34 @@ import {
   getBundlesRealtime,
   updateBundle,
 } from "../../services/bundleService";
-import type { Bundle, BundleFormData } from "../../types/bundle";
+import type { Bundle, BundleFormData, DurationUnit } from "../../types/bundle";
 import { DEFAULT_BUNDLE_TIERS } from "../../utils/parseEvcSms";
 import BundleTable from "./BundleTable";
 import BundleForm from "./BundleForm";
 import ConfirmDialog from "../common/ConfirmDialog";
+
+// Confirmed pricing for the Tanaad (data) and Bulaal Lite catalogs, which
+// share several $ amounts with the original airtime tiers and each other
+// (e.g. $0.5 = 36hrs airtime / 3GB Tanaad / 60hrs Bulaal Lite) — that's
+// exactly why customers need to be individually pinned to one of these via
+// the "Assigned Bundle" field on their record instead of relying on price
+// alone.
+const TANAAD_BULAAL_CATALOG: Array<{
+  name: string;
+  amount: number;
+  durationValue: number;
+  durationUnit: DurationUnit;
+}> = [
+  { name: "Tanaad 1700MB", amount: 0.1, durationValue: 7, durationUnit: "days" },
+  { name: "Tanaad 1.5GB", amount: 0.25, durationValue: 7, durationUnit: "days" },
+  { name: "Tanaad 3GB", amount: 0.5, durationValue: 7, durationUnit: "days" },
+  { name: "Tanaad 10GB", amount: 1, durationValue: 7, durationUnit: "days" },
+  { name: "Tanaad 20GB", amount: 3, durationValue: 1, durationUnit: "months" },
+  { name: "Tanaad 45GB", amount: 5, durationValue: 1, durationUnit: "months" },
+  { name: "Tanaad 80GB", amount: 8, durationValue: 1, durationUnit: "months" },
+  { name: "Bulaal Lite (60hrs)", amount: 0.5, durationValue: 60, durationUnit: "hours" },
+  { name: "Bulaal Lite (Weekly)", amount: 2, durationValue: 7, durationUnit: "days" },
+];
 
 export default function BundlesView() {
   const { t } = useLanguage();
@@ -19,6 +42,7 @@ export default function BundlesView() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [seedingCatalog, setSeedingCatalog] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingBundle, setEditingBundle] = useState<Bundle | null>(null);
@@ -87,6 +111,24 @@ export default function BundlesView() {
     }
   }
 
+  async function handleLoadTanaadBulaal() {
+    setSeedingCatalog(true);
+    try {
+      const existing = new Set(bundles.map((b) => `${b.name}|${b.amount}`));
+      for (const entry of TANAAD_BULAAL_CATALOG) {
+        if (existing.has(`${entry.name}|${entry.amount}`)) continue;
+        await addBundle({
+          name: entry.name,
+          amount: String(entry.amount),
+          durationValue: String(entry.durationValue),
+          durationUnit: entry.durationUnit,
+        });
+      }
+    } finally {
+      setSeedingCatalog(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -94,13 +136,27 @@ export default function BundlesView() {
           <h1 className="text-xl font-bold text-ink-900">{t.bundlesTitle}</h1>
           <p className="mt-0.5 text-sm text-ink-500">{t.bundlesSubtitle}</p>
         </div>
-        <button
-          onClick={openAddForm}
-          className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700"
-        >
-          <Plus size={16} />
-          {t.addBundle}
-        </button>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <button
+            onClick={() => void handleLoadTanaadBulaal()}
+            disabled={seedingCatalog}
+            className="flex items-center gap-2 rounded-lg border border-ink-300 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 shadow-sm transition hover:bg-ink-100 disabled:opacity-60"
+          >
+            {seedingCatalog ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Sparkles size={14} className="text-amtel-600" />
+            )}
+            {t.loadTanaadBulaalPricing}
+          </button>
+          <button
+            onClick={openAddForm}
+            className="flex items-center justify-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700"
+          >
+            <Plus size={16} />
+            {t.addBundle}
+          </button>
+        </div>
       </div>
 
       {loading ? (

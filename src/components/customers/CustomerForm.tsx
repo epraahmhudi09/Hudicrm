@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { X, Loader2, Star, UserCheck } from "lucide-react";
 import type { Customer, CustomerFormData, CustomerStatus } from "../../types/customer";
 import { EMPTY_CUSTOMER_FORM } from "../../types/customer";
+import type { Bundle } from "../../types/bundle";
+import { getBundlesRealtime } from "../../services/bundleService";
+import { formatDuration } from "../bundles/BundleTable";
 import { PHONE_PATTERN } from "../../utils/customerValidation";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -32,6 +35,12 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = getBundlesRealtime(setBundles);
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (customer) {
@@ -44,6 +53,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
         bundleExpiry: customer.bundleExpiry
           ? customer.bundleExpiry.toDate().toISOString().slice(0, 10)
           : "",
+        bundleId: customer.bundleId ?? "",
       });
     } else {
       setForm(EMPTY_CUSTOMER_FORM);
@@ -95,6 +105,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
           bundle: form.bundle.trim(),
           status: form.status,
           bundleExpiry: form.bundleExpiry,
+          bundleId: form.bundleId,
         },
         customData
       );
@@ -239,6 +250,29 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
               className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
             />
             <p className="mt-1 text-xs text-ink-500">{t.fieldBundleExpiryHelper}</p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="assignedBundle"
+              className="mb-1.5 block text-sm font-medium text-ink-700"
+            >
+              {t.fieldAssignedBundle}
+            </label>
+            <select
+              id="assignedBundle"
+              value={form.bundleId}
+              onChange={(e) => update("bundleId", e.target.value)}
+              className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+            >
+              <option value="">{t.fieldAssignedBundleNone}</option>
+              {bundles.map((bundle) => (
+                <option key={bundle.id} value={bundle.id}>
+                  {(bundle.name || t.bundleColName) + ` — $${bundle.amount.toFixed(2)} — ${formatDuration(bundle, t)}`}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-ink-500">{t.fieldAssignedBundleHelper}</p>
           </div>
 
           {!isEdit && (

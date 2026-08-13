@@ -8,18 +8,22 @@ function isDurationUnit(value: unknown): value is DurationUnit {
   return typeof value === "string" && (DURATION_UNITS as string[]).includes(value);
 }
 
+interface RegisteredBundle extends BundleTier {
+  id: string;
+}
+
 /** Reads staff-managed bundle tiers from Firestore, skipping any malformed docs. */
-async function loadBundleTiers(): Promise<BundleTier[]> {
+async function loadBundles(): Promise<RegisteredBundle[]> {
   const docs = await listCollection("bundles");
-  const tiers: BundleTier[] = [];
+  const bundles: RegisteredBundle[] = [];
   for (const doc of docs) {
     const amount = Number(doc.amount);
     const durationValue = Number(doc.durationValue);
     if (Number.isFinite(amount) && Number.isFinite(durationValue) && isDurationUnit(doc.durationUnit)) {
-      tiers.push({ amount, durationValue, durationUnit: doc.durationUnit });
+      bundles.push({ id: doc.id, amount, durationValue, durationUnit: doc.durationUnit });
     }
   }
-  return tiers;
+  return bundles;
 }
 
 function normalizePhone(phone: string): string {
@@ -80,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const normalizedTarget = normalizePhone(transaction.phone);
-    const [customers, tiers] = await Promise.all([listCollection("customers"), loadBundleTiers()]);
+    const [customers, bundles] = await Promise.all([listCollection("customers"), loadBundles()]);
     const match = customers.find(
       (c) =>
         normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
@@ -92,15 +96,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    // Several packages can share the same $ price (e.g. the original
+    // airtime tiers, Tanaad, and Bulaal Lite all sell $0.5), so the amount
+    // alone doesn't say which one this top-up was for. If this customer is
+    // pinned to a specific bundle (Customer form -> "Assigned Bundle") and
+    // this top-up matches its price, use that one — unambiguous. Otherwise
+    // fall back to a best-effort global amount match across all registered
+    // bundles (or the hardcoded defaults if none are registered yet), same
+    // as before assignment existed.
+    const assignedBundleId = typeof match.bundleId === "string" ? match.bundleId : null;
+    const assignedBundle = assignedBundleId
+      ? bundles.find((b) => b.id === assignedBundleId)
+      : undefined;
+    const usesAssignedBundle =
+      assignedBundle !== undefined && Math.abs(assignedBundle.amount - transaction.amount) < 0.001;
+
     // Auto-renew: a top-up resets the bundle's validity window from the SMS
-    // timestamp, per the staff-managed pricing tiers (Bundles page), falling
-    // back to the confirmed defaults if that collection is empty. This also
-    // naturally re-arms the 24h expiry alert, since check-expiry only
-    // re-notifies when bundleExpiry differs from the last value it alerted
-    // on — no separate reset of lastExpiryAlertSentFor needed here. An
-    // amount outside the known tiers still gets logged, just without
-    // touching bundleExpiry, so nothing is silently guessed.
-    const newExpiry = bundleExpiryFor(transaction, tiers);
+    // timestamp. This also naturally re-arms the 24h expiry alert, since
+    // check-expiry only re-notifies when bundleExpiry differs from the last
+    // value it alerted on — no separate reset of lastExpiryAlertSentFor
+    // needed here. An amount outside the known tiers still gets logged,
+    // just without touching bundleExpiry, so nothing is silently guessed.
+    const newExpiry = usesAssignedBundle
+      ? bundleExpiryFor(transaction, [assignedBundle])
+      : bundleExpiryFor(transaction, bundles);
     if (newExpiry) {
       await updateFields(`customers/${match.id}`, { bundleExpiry: newExpiry });
     }
@@ -110,7 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await incrementFields(`customers/${match.id}`, { totalTopupAmount: transaction.amount });
 
     const renewalNote = newExpiry
-      ? ` Bundle renewed until ${newExpiry.toISOString()}.`
+      ? ` Bundle renewed until ${newExpiry.toISOString()}${usesAssignedBundle ? " (assigned bundle)" : " (best-effort match — no bundle assigned)"}.`
       : ` (No matching bundle tier for $${transaction.amount.toFixed(2)} — expiry left unchanged.)`;
 
     // Deterministic doc ID keyed on the EVC transaction ID makes this
@@ -128,6 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       matched: true,
       customerId: match.id,
       bundleExpiry: newExpiry ? newExpiry.toISOString() : null,
+      usedAssignedBundle: usesAssignedBundle,
     });
   } catch (err) {
     console.error("sms-webhook error:", err);

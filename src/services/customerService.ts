@@ -32,10 +32,11 @@ function bundleExpiryToTimestamp(value: string): Timestamp | null {
 }
 
 function toFirestoreCustomerData(data: CustomerFormData) {
-  const { bundleExpiry, ...rest } = data;
+  const { bundleExpiry, bundleId, ...rest } = data;
   return {
     ...rest,
     bundleExpiry: bundleExpiryToTimestamp(bundleExpiry),
+    bundleId: bundleId || null,
   };
 }
 
