@@ -13,6 +13,12 @@ export interface Customer {
   /** Set by the scheduled Cloud Function — never written by the client. */
   lastExpiryAlertSentFor: Timestamp | null;
   /**
+   * Mirrors lastExpiryAlertSentFor but for the 48h+ staff call-escalation
+   * push — tracked separately so the two alerts (24h customer SMS, 48h
+   * staff nudge) don't suppress each other. Never written by the client.
+   */
+  last48hEscalationSentFor?: Timestamp | null;
+  /**
    * Running total of EVC top-up amounts credited to this customer, in
    * dollars. Incremented atomically by the SMS webhook — absent (undefined)
    * on customers who have never had a matched top-up; treat as 0.

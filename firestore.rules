@@ -52,7 +52,8 @@ service cloud.firestore {
     function hasValidCustomerSchema(data) {
       return data.keys().hasOnly(
           ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
-           'lastExpiryAlertSentFor', 'totalTopupAmount', 'bundleId', 'createdAt', 'updatedAt']) &&
+           'lastExpiryAlertSentFor', 'last48hEscalationSentFor', 'totalTopupAmount', 'bundleId',
+           'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -65,14 +66,16 @@ service cloud.firestore {
         data.updatedAt == request.time;
     }
 
-    // lastExpiryAlertSentFor is stamped by the scheduled Cloud Function (via
-    // the Admin SDK, which bypasses these rules) — clients never set it, but
-    // must be allowed to pass it through unchanged on ordinary edits, since
-    // `update` sees the full merged document here, not just changed fields.
+    // lastExpiryAlertSentFor / last48hEscalationSentFor are stamped by the
+    // scheduled check (via a service account, which bypasses these rules) —
+    // clients never set them, but must be allowed to pass them through
+    // unchanged on ordinary edits, since `update` sees the full merged
+    // document here, not just changed fields.
     function hasValidCustomerUpdate(data) {
       return data.keys().hasOnly(
           ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
-           'lastExpiryAlertSentFor', 'totalTopupAmount', 'bundleId', 'createdAt', 'updatedAt']) &&
+           'lastExpiryAlertSentFor', 'last48hEscalationSentFor', 'totalTopupAmount', 'bundleId',
+           'createdAt', 'updatedAt']) &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -80,6 +83,7 @@ service cloud.firestore {
         isValidStatus(data.status) &&
         isValidBundleExpiry(data.bundleExpiry) &&
         (!('lastExpiryAlertSentFor' in data) || isValidBundleExpiry(data.lastExpiryAlertSentFor)) &&
+        (!('last48hEscalationSentFor' in data) || isValidBundleExpiry(data.last48hEscalationSentFor)) &&
         isValidTopupAmount(data) &&
         (!('bundleId' in data) || isValidBundleId(data.bundleId)) &&
         data.createdAt == resource.data.createdAt &&
@@ -193,6 +197,15 @@ service cloud.firestore {
       allow create: if isSignedIn() && hasValidBundleSchema(request.resource.data);
       allow update: if isSignedIn() && hasValidBundleUpdate(request.resource.data);
       allow delete: if isSignedIn();
+    }
+
+    // Outbound SMS queue for the customer-facing 24h expiry reminder —
+    // written by check-expiry and consumed by the Termux sender script, both
+    // via a service account (bypasses these rules). Staff can view the queue
+    // for visibility, but never write to it directly.
+    match /outboundSms/{smsId} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     // Deny everything else by default.

@@ -63,8 +63,9 @@ Variables — add for all environments):
 | Variable | Where it comes from |
 |---|---|
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | Firebase Console → Project Settings → Service Accounts → **Generate new private key** (paste the whole downloaded JSON as the value) |
-| `SMS_WEBHOOK_SECRET` | Any long random string — authorizes calls to `/api/sms-webhook` |
+| `SMS_WEBHOOK_SECRET` | Any long random string — authorizes calls to `/api/sms-webhook`, `/api/pending-sms`, and `/api/mark-sms-sent` (same trusted device — the Termux phone — calls all three) |
 | `CRON_SECRET` | Any long random string — authorizes calls to `/api/check-expiry` |
+| `SUPPORT_CONTACT_PHONE` | Optional. The number shown in the customer-facing expiry reminder SMS ("Laxariir = ..."). Leave unset to omit that part of the message. |
 
 A **VAPID key** is also needed client-side for web push: Firebase Console →
 Project Settings → Cloud Messaging → Web Push certificates → generate one,
@@ -101,9 +102,12 @@ Amtel SIM:
 3. Copy `scripts/termux-evc-forwarder.sh` onto the phone (e.g. `curl` it from
    a Gist/raw GitHub URL, or use Termux's built-in file editor) and edit the
    `WEBHOOK_TOKEN` variable at the top to match `SMS_WEBHOOK_SECRET`.
-4. `chmod +x termux-evc-forwarder.sh && ./termux-evc-forwarder.sh` — it polls
-   every 20 seconds, tracks the last forwarded message so nothing is sent
-   twice, and logs each forward with its HTTP response code.
+4. `chmod +x termux-evc-forwarder.sh && ./termux-evc-forwarder.sh` — every 20
+   seconds it both (a) forwards new EVC top-up SMS to the webhook, tracking
+   the last forwarded message so nothing is sent twice, and (b) checks
+   `/api/pending-sms` for queued customer reminder texts (see Expiry alerts
+   below) and sends them via `termux-sms-send`. Logs each action with its
+   result.
 5. To survive phone reboots, install **Termux:Boot** (also from F-Droid),
    then put a one-line script in `~/.termux/boot/` that launches
    `termux-evc-forwarder.sh`. Also disable battery optimization for Termux in
@@ -111,11 +115,24 @@ Amtel SIM:
 
 ### Expiry alerts
 
-`/api/check-expiry` finds customers whose `bundleExpiry` passed 24+ hours
-ago and hasn't been renewed, and sends a web push notification to every
-staff member who has enabled notifications (Profile → Enable Notifications).
-Vercel Hobby's built-in cron is daily-only, so trigger this hourly with a
-free external scheduler like [cron-job.org](https://cron-job.org) hitting:
+`/api/check-expiry` runs two independent checks off the same `bundleExpiry`
+field, both re-armed automatically by a renewal since each compares against
+the bundleExpiry it last acted on:
+
+- **24h+ overdue**: sends a web push notification to every staff member who
+  has enabled notifications (Profile → Enable Notifications), and queues a
+  reminder SMS to the customer themselves (`outboundSms` collection — sent
+  by the Termux phone's poll loop, see above). The reminder text is fixed:
+  `"<name> Waykaa dhacday Xirmadii Internate ka ahayd ee Kuugu Jirtay Fadlan
+  Si aad U cusboonaysiiso Laxariir = <SUPPORT_CONTACT_PHONE>"`.
+- **48h+ overdue**: sends a separate, more urgent staff push asking someone
+  to personally call the customer — no automated voice calling (that needs a
+  paid telephony API with uncertain routing to Somali numbers), just a
+  louder nudge to use the click-to-call already in the customer table.
+
+Vercel Hobby's built-in cron is daily-only, so trigger this on a short
+interval (e.g. every 30 min) with a free external scheduler like
+[cron-job.org](https://cron-job.org) hitting:
 
 ```
 https://<your-vercel-domain>/api/check-expiry?token=<CRON_SECRET>

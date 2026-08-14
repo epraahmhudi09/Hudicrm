@@ -131,6 +131,19 @@ export async function setDocument(path: string, data: Record<string, unknown>): 
   });
 }
 
+/** Creates a new document in a collection with an auto-generated ID, returning that ID. */
+export async function addDocument(
+  collectionPath: string,
+  data: Record<string, unknown>
+): Promise<string> {
+  const res = await authFetch(`${base()}/${collectionPath}`, {
+    method: "POST",
+    body: JSON.stringify({ fields: encodeFields(data) }),
+  });
+  const json = (await res.json()) as { name: string };
+  return json.name.split("/").pop()!;
+}
+
 /** Merges only the given fields into an existing document. */
 export async function updateFields(path: string, data: Record<string, unknown>): Promise<void> {
   const url = new URL(`${base()}/${path}`);
