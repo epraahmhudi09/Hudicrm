@@ -129,16 +129,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       escalated,
       tokensRegistered: tokens.length,
       pushErrors,
-      // Temporary diagnostics — safe to remove once expiry timing is confirmed.
-      debugExpiredCount: expired.length,
-      debugExpired: expired.map((d) => ({
-        id: d.id,
-        name: d.name,
-        bundleExpiry: (d.bundleExpiry as Date | null)?.toISOString() ?? null,
-        lastExpiryAlertSentFor: (d.lastExpiryAlertSentFor as Date | null | undefined)?.toISOString() ?? null,
-      })),
-      debugNow: new Date(now).toISOString(),
-      debugAlertCutoff: alertCutoff.toISOString(),
     });
   } catch (err) {
     console.error("check-expiry error:", err);
