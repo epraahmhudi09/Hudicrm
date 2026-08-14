@@ -65,7 +65,8 @@ Variables — add for all environments):
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | Firebase Console → Project Settings → Service Accounts → **Generate new private key** (paste the whole downloaded JSON as the value) |
 | `SMS_WEBHOOK_SECRET` | Any long random string — authorizes calls to `/api/sms-webhook`, `/api/pending-sms`, and `/api/mark-sms-sent` (same trusted device — the Termux phone — calls all three) |
 | `CRON_SECRET` | Any long random string — authorizes calls to `/api/check-expiry` |
-| `SUPPORT_CONTACT_PHONE` | Optional. The number shown in the customer-facing expiry reminder SMS ("Laxariir = ..."). Leave unset to omit that part of the message. |
+| `SUPPORT_CONTACT_PHONE` | Optional. The number shown in the customer-facing expiry reminder SMS ("Laxiriir = ..."). Leave unset to omit that part of the message. |
+| `SUPPORT_CONTACT_PHONE_BACKUP` | Optional. A second number shown alongside `SUPPORT_CONTACT_PHONE`, joined with `/` (e.g. a backup SIM on a different network). |
 
 A **VAPID key** is also needed client-side for web push: Firebase Console →
 Project Settings → Cloud Messaging → Web Push certificates → generate one,
@@ -123,8 +124,8 @@ the bundleExpiry it last acted on:
   has enabled notifications (Profile → Enable Notifications), and queues a
   reminder SMS to the customer themselves (`outboundSms` collection — sent
   by the Termux phone's poll loop, see above). The reminder text is fixed:
-  `"<name> Waykaa dhacday Xirmadii Internate ka ahayd ee Kuugu Jirtay Fadlan
-  Si aad U cusboonaysiiso Laxariir = <SUPPORT_CONTACT_PHONE>"`.
+  `"Macmiil <name> Waykaa dhacday Xirmadii Internate ka Ahayd ee Kuugu Jirtay
+  Fadlan Si aad U cusboonaysiiso Laxiriir = <SUPPORT_CONTACT_PHONE>[/<SUPPORT_CONTACT_PHONE_BACKUP>]"`.
 - **48h+ overdue**: sends a separate, more urgent staff push asking someone
   to personally call the customer — no automated voice calling (that needs a
   paid telephony API with uncertain routing to Somali numbers), just a

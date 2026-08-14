@@ -6,9 +6,11 @@ const ALERT_AFTER_MS = 24 * 60 * 60 * 1000;
 const ESCALATION_AFTER_MS = 48 * 60 * 60 * 1000;
 
 function customerSmsText(name: string): string {
-  const supportPhone = process.env.SUPPORT_CONTACT_PHONE ?? "";
-  const contactSuffix = supportPhone ? ` Laxariir = ${supportPhone}` : "";
-  return `${name} Waykaa dhacday Xirmadii Internate ka ahayd ee Kuugu Jirtay Fadlan Si aad U cusboonaysiiso${contactSuffix}`;
+  const phones = [process.env.SUPPORT_CONTACT_PHONE, process.env.SUPPORT_CONTACT_PHONE_BACKUP]
+    .filter((p): p is string => Boolean(p && p.trim()))
+    .join("/");
+  const contactSuffix = phones ? ` Laxiriir = ${phones}` : "";
+  return `Macmiil ${name} Waykaa dhacday Xirmadii Internate ka Ahayd ee Kuugu Jirtay Fadlan Si aad U cusboonaysiiso${contactSuffix}`;
 }
 
 /**
