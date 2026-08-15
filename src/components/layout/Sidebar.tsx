@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import {
   BarChart3,
   CalendarX2,
+  Download,
   LayoutDashboard,
   MessageSquareText,
   Package,
@@ -12,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useInstallPrompt } from "../../hooks/useInstallPrompt";
 import Logo from "./Logo";
 
 export type AppView =
@@ -34,6 +36,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProps) {
   const { t } = useLanguage();
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   const items: Array<{ key: AppView; label: string; icon: ReactNode }> = [
     { key: "dashboard", label: t.navDashboard, icon: <LayoutDashboard size={18} /> },
@@ -94,7 +97,16 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
           ))}
         </nav>
 
-        <div className="border-t border-ink-100 p-3">
+        <div className="border-t border-ink-100 p-3 space-y-1">
+          {canInstall && (
+            <button
+              onClick={promptInstall}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-amtel-700 transition hover:bg-amtel-50"
+            >
+              <Download size={18} />
+              {t.installApp}
+            </button>
+          )}
           <button
             onClick={() => {
               onNavigate(settingsItem.key);

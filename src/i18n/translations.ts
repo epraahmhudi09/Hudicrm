@@ -165,6 +165,7 @@ export interface Translations {
   navCustomers: string;
   navDebtCustomers: string;
   toggleSidebar: string;
+  installApp: string;
 
   debtCustomersTitle: string;
   debtCustomersSubtitle: string;
@@ -261,6 +262,10 @@ export interface Translations {
   smsRemindersTitle: string;
   smsRemindersSubtitle: string;
   colSentAt: string;
+  viewMessage: string;
+  smsMessageNotFound: string;
+  smsStatusSent: string;
+  smsStatusPending: string;
   smsRemindersEmptyTitle: string;
   smsRemindersEmptySubtitle: string;
 
@@ -446,6 +451,7 @@ export const translations: Record<"en" | "so", Translations> = {
     navCustomers: "Customers",
     navDebtCustomers: "Debt Customers",
     toggleSidebar: "Toggle menu",
+    installApp: "Install App",
 
     debtCustomersTitle: "Debt Customers",
     debtCustomersSubtitle: "Track customers who owe money and how much they still need to pay.",
@@ -546,6 +552,10 @@ export const translations: Record<"en" | "so", Translations> = {
     smsRemindersSubtitle:
       "Customers who were sent the 24h expiry reminder text and still haven't renewed.",
     colSentAt: "Sent At",
+    viewMessage: "View",
+    smsMessageNotFound: "No message found for this customer yet.",
+    smsStatusSent: "Sent",
+    smsStatusPending: "Pending",
     smsRemindersEmptyTitle: "No reminders sent yet",
     smsRemindersEmptySubtitle: "Customers appear here once they've been sent the 24h expiry SMS.",
 
@@ -732,6 +742,7 @@ export const translations: Record<"en" | "so", Translations> = {
     navCustomers: "Macaamiisha",
     navDebtCustomers: "Macaamiisha Deynta",
     toggleSidebar: "Furfur menu-ga",
+    installApp: "Rakib App-ka",
 
     debtCustomersTitle: "Macaamiisha Deynta",
     debtCustomersSubtitle: "La soco macaamiisha lacag ku leh iyo intay ku hartay inay bixiyaan.",
@@ -833,6 +844,10 @@ export const translations: Record<"en" | "so", Translations> = {
     smsRemindersSubtitle:
       "Macaamiisha loo diray qoraalka xasuusinta 24h ee bundle-ka dhacay oo aan weli cusboonaysiin.",
     colSentAt: "Waqtiga la Diray",
+    viewMessage: "Fiiri",
+    smsMessageNotFound: "Wali fariin uma helin macmiilkan.",
+    smsStatusSent: "La diray",
+    smsStatusPending: "Sugaya",
     smsRemindersEmptyTitle: "Weli xasuusin lama dirin",
     smsRemindersEmptySubtitle:
       "Macaamiisha waxay halkan ka muuqan doonaan marka loo diro SMS-ka xasuusinta 24h.",

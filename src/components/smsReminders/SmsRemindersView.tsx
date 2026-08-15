@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, MessageSquareText, Phone } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  Loader2,
+  MessageSquareText,
+  Phone,
+  X,
+} from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { getCustomersRealtime } from "../../services/customerService";
+import { getOutboundSmsForCustomer } from "../../services/outboundSmsService";
 import type { Customer } from "../../types/customer";
+import type { OutboundSms } from "../../types/outboundSms";
 import { telHref } from "../../utils/phone";
 
 function daysOverdue(bundleExpiry: Customer["bundleExpiry"]): number | null {
@@ -16,11 +26,98 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
+function formatDateTime(date: Date): string {
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function MessagePreviewModal({
+  customer,
+  onClose,
+}: {
+  customer: Customer;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [messages, setMessages] = useState<OutboundSms[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getOutboundSmsForCustomer(customer.id)
+      .then((data) => {
+        if (!cancelled) setMessages(data);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [customer.id]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+          <div>
+            <h2 className="text-sm font-semibold text-ink-900">{customer.name}</h2>
+            <p className="text-xs text-ink-500">{customer.mainPhone}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {error ? (
+            <p className="text-sm text-amtel-600">{error}</p>
+          ) : messages === null ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 size={20} className="animate-spin text-amtel-600" />
+            </div>
+          ) : messages.length === 0 ? (
+            <p className="py-8 text-center text-sm text-ink-500">{t.smsMessageNotFound}</p>
+          ) : (
+            <div className="space-y-3">
+              {messages.map((msg) => (
+                <div key={msg.id} className="rounded-lg border border-ink-100 bg-ink-100/40 p-3">
+                  <p className="whitespace-pre-wrap text-sm text-ink-900">{msg.message}</p>
+                  <p className="mt-2 flex items-center justify-between text-xs text-ink-500">
+                    <span>{msg.sentAt ? t.smsStatusSent : t.smsStatusPending}</span>
+                    <span>{msg.createdAt ? formatDateTime(msg.createdAt.toDate()) : "—"}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SmsRemindersView() {
   const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
@@ -87,6 +184,7 @@ export default function SmsRemindersView() {
                   <th className="px-4 py-3">{t.colBundle}</th>
                   <th className="px-4 py-3">{t.colSentAt}</th>
                   <th className="px-4 py-3">{t.colDaysOverdue}</th>
+                  <th className="px-4 py-3 text-right">{t.colActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -116,12 +214,28 @@ export default function SmsRemindersView() {
                         </span>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end">
+                        <button
+                          onClick={() => setViewingCustomer(customer)}
+                          title={t.viewMessage}
+                          className="flex items-center gap-1.5 rounded-lg border border-ink-300 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-sm transition hover:bg-ink-100"
+                        >
+                          <Eye size={13} />
+                          {t.viewMessage}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+
+      {viewingCustomer && (
+        <MessagePreviewModal customer={viewingCustomer} onClose={() => setViewingCustomer(null)} />
       )}
     </div>
   );
