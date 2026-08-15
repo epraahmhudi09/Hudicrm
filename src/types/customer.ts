@@ -60,7 +60,7 @@ export const EMPTY_CUSTOMER_FORM: CustomerFormData = {
   bundleId: "",
 };
 
-export type CustomerFilter = "all" | "loyal" | "normal" | "expiring";
+export type CustomerFilter = "all" | "loyal" | "normal" | "expiring" | "az" | "expiry";
 
 export type ActivityType = "created" | "status_change" | "call" | "note" | "updated" | "topup";
 

@@ -9,6 +9,8 @@ import DebtCustomersView from "./components/debtCustomers/DebtCustomersView";
 import ExpiredBundlesView from "./components/expiredBundles/ExpiredBundlesView";
 import BundlesView from "./components/bundles/BundlesView";
 import AnalyticsView from "./components/analytics/AnalyticsView";
+import SmsRemindersView from "./components/smsReminders/SmsRemindersView";
+import EscalationsView from "./components/escalations/EscalationsView";
 import StatsOverview from "./components/dashboard/StatsOverview";
 import SearchFilterBar from "./components/customers/SearchFilterBar";
 import CustomerTable from "./components/customers/CustomerTable";
@@ -98,15 +100,16 @@ function Dashboard() {
   const filteredCustomers = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    return customers.filter((customer) => {
+    const matched = customers.filter((customer) => {
       const matchesFilter =
-        filter === "all" ||
-        (filter === "expiring"
-          ? (() => {
-              const days = daysUntilExpiry(customer.bundleExpiry);
-              return days !== null && days <= 7;
-            })()
-          : customer.status === filter);
+        filter === "all" || filter === "az" || filter === "expiry"
+          ? true
+          : filter === "expiring"
+            ? (() => {
+                const days = daysUntilExpiry(customer.bundleExpiry);
+                return days !== null && days <= 7;
+              })()
+            : customer.status === filter;
       if (!matchesFilter) return false;
 
       if (!term) return true;
@@ -116,6 +119,18 @@ function Dashboard() {
         customer.backupPhone.toLowerCase().includes(term)
       );
     });
+
+    if (filter === "az") {
+      return [...matched].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (filter === "expiry") {
+      return [...matched].sort((a, b) => {
+        const aTime = a.bundleExpiry?.toDate().getTime() ?? Infinity;
+        const bTime = b.bundleExpiry?.toDate().getTime() ?? Infinity;
+        return aTime - bTime;
+      });
+    }
+    return matched;
   }, [customers, search, filter]);
 
   function openAddForm() {
@@ -250,6 +265,10 @@ function Dashboard() {
           <DebtCustomersView />
         ) : view === "expiredBundles" ? (
           <ExpiredBundlesView />
+        ) : view === "smsReminders" ? (
+          <SmsRemindersView />
+        ) : view === "escalations" ? (
+          <EscalationsView />
         ) : view === "bundles" ? (
           <BundlesView />
         ) : (

@@ -129,10 +129,13 @@ export interface Translations {
   expiryBadgeDays: (n: number) => string;
   statsExpiringSoon: string;
   filterExpiring: string;
+  filterAlphabetical: string;
+  filterByExpiry: string;
 
   export: string;
 
   actionHistory: string;
+  actionCall: string;
   historyTitle: string;
   historyEmpty: string;
   addNote: string;
@@ -230,6 +233,20 @@ export interface Translations {
   customersWithTopups: string;
   avgTopupPerCustomer: string;
   noTopupsYet: string;
+
+  navSmsReminders: string;
+  smsRemindersTitle: string;
+  smsRemindersSubtitle: string;
+  colSentAt: string;
+  smsRemindersEmptyTitle: string;
+  smsRemindersEmptySubtitle: string;
+
+  navEscalations: string;
+  escalationsTitle: string;
+  escalationsSubtitle: string;
+  colEscalatedAt: string;
+  escalationsEmptyTitle: string;
+  escalationsEmptySubtitle: string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -369,10 +386,13 @@ export const translations: Record<"en" | "so", Translations> = {
     expiryBadgeDays: (n) => (n === 0 ? "Expires today" : `Expires in ${n}d`),
     statsExpiringSoon: "Expiring Soon",
     filterExpiring: "Expiring Soon",
+    filterAlphabetical: "Sort A–Z",
+    filterByExpiry: "Sort by Expiry",
 
     export: "Export",
 
     actionHistory: "History",
+    actionCall: "Call",
     historyTitle: "Customer History",
     historyEmpty: "No activity yet.",
     addNote: "Add Note",
@@ -474,6 +494,22 @@ export const translations: Record<"en" | "so", Translations> = {
     customersWithTopups: "Customers With Top-ups",
     avgTopupPerCustomer: "Avg. per Customer",
     noTopupsYet: "No top-ups recorded yet.",
+
+    navSmsReminders: "SMS Reminders Sent",
+    smsRemindersTitle: "SMS Reminders Sent",
+    smsRemindersSubtitle:
+      "Customers who were sent the 24h expiry reminder text and still haven't renewed.",
+    colSentAt: "Sent At",
+    smsRemindersEmptyTitle: "No reminders sent yet",
+    smsRemindersEmptySubtitle: "Customers appear here once they've been sent the 24h expiry SMS.",
+
+    navEscalations: "48h Call Escalations",
+    escalationsTitle: "48h Call Escalations",
+    escalationsSubtitle:
+      "Customers 48h+ overdue who still haven't renewed — call them directly.",
+    colEscalatedAt: "Flagged At",
+    escalationsEmptyTitle: "No escalations right now",
+    escalationsEmptySubtitle: "Customers appear here once they're 48h+ overdue without renewing.",
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -612,10 +648,13 @@ export const translations: Record<"en" | "so", Translations> = {
     expiryBadgeDays: (n) => (n === 0 ? "Maanta ayay dhacaysaa" : `${n} maalmood ayay ku dhacaysaa`),
     statsExpiringSoon: "Dhawaan Dhici Doona",
     filterExpiring: "Dhawaan Dhici Doona",
+    filterAlphabetical: "Kala Sooc A–Z",
+    filterByExpiry: "Kala Sooc Dhicitaanka",
 
     export: "Dejiso (Export)",
 
     actionHistory: "Taariikhda",
+    actionCall: "Wac",
     historyTitle: "Taariikhda Macmiilka",
     historyEmpty: "Weli wax dhaqdhaqaaq ah ma jiraan.",
     addNote: "Ku Dar Qoraal",
@@ -718,6 +757,24 @@ export const translations: Record<"en" | "so", Translations> = {
     customersWithTopups: "Macaamiisha Wax Shubay",
     avgTopupPerCustomer: "Celceliska Macmiil Kasta",
     noTopupsYet: "Weli lacag lama shubin.",
+
+    navSmsReminders: "SMS-yada Xasuusinta la Diray",
+    smsRemindersTitle: "SMS-yada Xasuusinta la Diray",
+    smsRemindersSubtitle:
+      "Macaamiisha loo diray qoraalka xasuusinta 24h ee bundle-ka dhacay oo aan weli cusboonaysiin.",
+    colSentAt: "Waqtiga la Diray",
+    smsRemindersEmptyTitle: "Weli xasuusin lama dirin",
+    smsRemindersEmptySubtitle:
+      "Macaamiisha waxay halkan ka muuqan doonaan marka loo diro SMS-ka xasuusinta 24h.",
+
+    navEscalations: "Wicitaanka 48h",
+    escalationsTitle: "Wicitaanka 48h",
+    escalationsSubtitle:
+      "Macaamiisha 48h+ ka dhacay oo aan weli cusboonaysiin — si toos ah ula xiriir.",
+    colEscalatedAt: "Waqtiga la Calaamadiyay",
+    escalationsEmptyTitle: "Hadda wicitaan lama baahna",
+    escalationsEmptySubtitle:
+      "Macaamiisha waxay halkan ka muuqan doonaan marka ay 48h+ ka dhacaan iyagoo aan cusboonaysiin.",
   },
 };
 

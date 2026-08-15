@@ -55,6 +55,8 @@ export default function SearchFilterBar({
             <option value="loyal">{t.filterLoyalOnly}</option>
             <option value="normal">{t.filterNormalOnly}</option>
             <option value="expiring">{t.filterExpiring}</option>
+            <option value="az">{t.filterAlphabetical}</option>
+            <option value="expiry">{t.filterByExpiry}</option>
           </select>
         </div>
       </div>

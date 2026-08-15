@@ -1,9 +1,25 @@
 import { type ReactNode } from "react";
-import { BarChart3, CalendarX2, Package, Users, Wallet, X } from "lucide-react";
+import {
+  BarChart3,
+  CalendarX2,
+  MessageSquareText,
+  Package,
+  PhoneCall,
+  Users,
+  Wallet,
+  X,
+} from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import Logo from "./Logo";
 
-export type AppView = "customers" | "debtCustomers" | "expiredBundles" | "bundles" | "analytics";
+export type AppView =
+  | "customers"
+  | "debtCustomers"
+  | "expiredBundles"
+  | "bundles"
+  | "analytics"
+  | "smsReminders"
+  | "escalations";
 
 interface SidebarProps {
   open: boolean;
@@ -19,6 +35,8 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
     { key: "customers", label: t.navCustomers, icon: <Users size={18} /> },
     { key: "debtCustomers", label: t.navDebtCustomers, icon: <Wallet size={18} /> },
     { key: "expiredBundles", label: t.navExpiredBundles, icon: <CalendarX2 size={18} /> },
+    { key: "smsReminders", label: t.navSmsReminders, icon: <MessageSquareText size={18} /> },
+    { key: "escalations", label: t.navEscalations, icon: <PhoneCall size={18} /> },
     { key: "bundles", label: t.navBundles, icon: <Package size={18} /> },
     { key: "analytics", label: t.navAnalytics, icon: <BarChart3 size={18} /> },
   ];
