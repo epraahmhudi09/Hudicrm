@@ -17,6 +17,14 @@ export interface Translations {
   authErrorNetwork: string;
   authErrorGeneric: string;
 
+  forgotPasswordLink: string;
+  forgotPasswordTitle: string;
+  forgotPasswordSubtitle: string;
+  sendResetLink: string;
+  backToSignIn: string;
+  resetEmailSentTitle: string;
+  resetEmailSentSubtitle: (email: string) => string;
+
   account: string;
   signedInAs: string;
   editProfile: string;
@@ -95,6 +103,7 @@ export interface Translations {
   delete: string;
 
   couldntLoadCustomers: string;
+  couldntLoadTopups: string;
 
   importTitle: string;
   importInstructions: string;
@@ -187,6 +196,16 @@ export interface Translations {
   navBundles: string;
   navExpiredBundles: string;
   navAnalytics: string;
+  navDashboard: string;
+  dashboardTitle: string;
+  dashboardSubtitle: string;
+  topCustomerLabel: string;
+  recentTopupsTitle: string;
+
+  navSettings: string;
+  settingsTitle: string;
+  settingsSubtitle: string;
+  settingsLanguage: string;
 
   bundlesTitle: string;
   bundlesSubtitle: string;
@@ -227,6 +246,10 @@ export interface Translations {
 
   analyticsTitle: string;
   analyticsSubtitle: string;
+  periodToday: string;
+  periodWeek: string;
+  periodMonth: string;
+  periodAll: string;
   topSpendersTitle: string;
   lowSpendersTitle: string;
   totalTopupVolume: string;
@@ -270,6 +293,14 @@ export const translations: Record<"en" | "so", Translations> = {
       "Email/Password sign-in isn't enabled for this Firebase project yet. Enable it in the Firebase Console under Authentication → Sign-in method.",
     authErrorNetwork: "Network error. Check your connection and try again.",
     authErrorGeneric: "Sign in failed. Please try again.",
+
+    forgotPasswordLink: "Forgot password?",
+    forgotPasswordTitle: "Reset your password",
+    forgotPasswordSubtitle: "Enter your email and we'll send you a link to reset your password.",
+    sendResetLink: "Send Reset Link",
+    backToSignIn: "Back to sign in",
+    resetEmailSentTitle: "Check your email",
+    resetEmailSentSubtitle: (email) => `We sent a password reset link to ${email}. Open it on this device to set a new password.`,
 
     account: "Account",
     signedInAs: "Signed in as",
@@ -350,6 +381,7 @@ export const translations: Record<"en" | "so", Translations> = {
     delete: "Delete",
 
     couldntLoadCustomers: "Couldn't load customers",
+    couldntLoadTopups: "Couldn't load top-up data",
 
     importTitle: "Import Customers",
     importInstructions:
@@ -446,6 +478,16 @@ export const translations: Record<"en" | "so", Translations> = {
     navBundles: "Bundles",
     navExpiredBundles: "Expired Bundles",
     navAnalytics: "Analytics",
+    navDashboard: "Dashboard",
+    dashboardTitle: "Dashboard",
+    dashboardSubtitle: "A quick look at how the business is doing right now.",
+    topCustomerLabel: "Top Customer",
+    recentTopupsTitle: "Recent Top-ups",
+
+    navSettings: "Settings",
+    settingsTitle: "Settings",
+    settingsSubtitle: "Manage your profile, password, notifications, and language.",
+    settingsLanguage: "Language",
 
     bundlesTitle: "Bundles",
     bundlesSubtitle:
@@ -488,6 +530,10 @@ export const translations: Record<"en" | "so", Translations> = {
 
     analyticsTitle: "Analytics",
     analyticsSubtitle: "See who's topping up the most — and who might need a nudge.",
+    periodToday: "Today",
+    periodWeek: "This Week",
+    periodMonth: "This Month",
+    periodAll: "All Time",
     topSpendersTitle: "Top Spenders",
     lowSpendersTitle: "Lowest Spenders",
     totalTopupVolume: "Total Top-up Volume",
@@ -531,6 +577,15 @@ export const translations: Record<"en" | "so", Translations> = {
       "Email/Password gelitaanka weli lagama shaqaal geliyay project-kan Firebase. Ka shaqaal geli Firebase Console → Authentication → Sign-in method.",
     authErrorNetwork: "Cilad network ah. Hubi xiriirkaaga internet-ka kadibna isku day.",
     authErrorGeneric: "Gelitaanku wuu fashilmay. Fadlan mar kale isku day.",
+
+    forgotPasswordLink: "Furaha sirta ah ma illowday?",
+    forgotPasswordTitle: "Dib u deji furahaaga sirta ah",
+    forgotPasswordSubtitle: "Geli email-kaaga waxaanan kuu diri doonaa link aad kaga dib-u-dejin karto furaha sirta ah.",
+    sendResetLink: "Dir Link Dib-u-dejinta",
+    backToSignIn: "Ku laabo gelitaanka",
+    resetEmailSentTitle: "Hubi email-kaaga",
+    resetEmailSentSubtitle: (email) =>
+      `Waxaanu kuu dirnay link dib-u-dejinta furaha sirta ah ${email}. Ka fur device-kan si aad furo sirta ah cusub u dejiso.`,
 
     account: "Account",
     signedInAs: "Waxaad ku gashantahay",
@@ -612,6 +667,7 @@ export const translations: Record<"en" | "so", Translations> = {
     delete: "Tirtir",
 
     couldntLoadCustomers: "Macaamiisha lama soo geli karin",
+    couldntLoadTopups: "Xogta shubashada lama soo geli karin",
 
     importTitle: "Soo Deji Macaamiisha",
     importInstructions:
@@ -708,6 +764,16 @@ export const translations: Record<"en" | "so", Translations> = {
     navBundles: "Bundle-yada",
     navExpiredBundles: "Bundle-yada Dhacay",
     navAnalytics: "Falanqaynta",
+    navDashboard: "Dashboard",
+    dashboardTitle: "Dashboard",
+    dashboardSubtitle: "Aragtida degdegga ah ee xaaladda ganacsigaaga hadda.",
+    topCustomerLabel: "Macmiilka Ugu Sarreeya",
+    recentTopupsTitle: "Shubashada Ugu Dambeeyay",
+
+    navSettings: "Settings-ka",
+    settingsTitle: "Settings-ka",
+    settingsSubtitle: "Maamul profile-kaaga, furaha sirta ah, ogeysiisyada, iyo luqadda.",
+    settingsLanguage: "Luqadda",
 
     bundlesTitle: "Bundle-yada",
     bundlesSubtitle:
@@ -751,6 +817,10 @@ export const translations: Record<"en" | "so", Translations> = {
 
     analyticsTitle: "Falanqaynta",
     analyticsSubtitle: "Arag cida ugu badan shubasho — iyo cida u baahan xasuusin.",
+    periodToday: "Maanta",
+    periodWeek: "Toddobaadkan",
+    periodMonth: "Bishan",
+    periodAll: "Waqtiga Oo Dhan",
     topSpendersTitle: "Kuwa Ugu Shubashada Badan",
     lowSpendersTitle: "Kuwa Ugu Shubashada Yar",
     totalTopupVolume: "Wadarta Lacagta la Shubtay",

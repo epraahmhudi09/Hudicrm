@@ -11,11 +11,24 @@ import {
 } from "recharts";
 import { useLanguage } from "../../context/LanguageContext";
 import { getCustomersRealtime } from "../../services/customerService";
+import { getTopupsInRange } from "../../services/topupService";
 import type { Customer } from "../../types/customer";
+import type { Topup } from "../../types/topup";
 
-interface RankedCustomer {
-  customer: Customer;
+type Period = "today" | "week" | "month" | "all";
+
+interface RankedEntry {
+  id: string;
+  name: string;
+  phone: string;
   amount: number;
+}
+
+function periodStart(period: Period): Date {
+  const now = new Date();
+  if (period === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (period === "week") return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
 function StatCard({
@@ -45,20 +58,20 @@ function StatCard({
   );
 }
 
-function RankedList({ rows, emptyText }: { rows: RankedCustomer[]; emptyText: string }) {
+function RankedList({ rows, emptyText }: { rows: RankedEntry[]; emptyText: string }) {
   if (rows.length === 0) {
     return <p className="px-4 py-8 text-center text-sm text-ink-500">{emptyText}</p>;
   }
   return (
     <ol className="divide-y divide-ink-100">
       {rows.map((row, index) => (
-        <li key={row.customer.id} className="flex items-center gap-3 px-4 py-3">
+        <li key={row.id} className="flex items-center gap-3 px-4 py-3">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink-100 text-xs font-semibold text-ink-500">
             {index + 1}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-ink-900">{row.customer.name}</p>
-            <p className="truncate text-xs text-ink-500">{row.customer.mainPhone}</p>
+            <p className="truncate text-sm font-medium text-ink-900">{row.name}</p>
+            <p className="truncate text-xs text-ink-500">{row.phone}</p>
           </div>
           <span className="shrink-0 text-sm font-semibold text-amtel-700">
             ${row.amount.toFixed(2)}
@@ -75,6 +88,11 @@ export default function AnalyticsView() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const [period, setPeriod] = useState<Period>("all");
+  const [rangedTopups, setRangedTopups] = useState<Topup[] | null>(null);
+  const [loadingRange, setLoadingRange] = useState(false);
+  const [rangeError, setRangeError] = useState<string | null>(null);
+
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
       (data) => {
@@ -90,40 +108,99 @@ export default function AnalyticsView() {
     return unsubscribe;
   }, []);
 
-  const ranked = useMemo(() => {
-    const withTopups = customers
-      .map((customer) => ({ customer, amount: customer.totalTopupAmount ?? 0 }))
-      .filter((row) => row.amount > 0);
-
-    const topSpenders = [...withTopups].sort((a, b) => b.amount - a.amount).slice(0, 10);
-    const lowSpenders = [...withTopups].sort((a, b) => a.amount - b.amount).slice(0, 10);
-
-    const totalVolume = withTopups.reduce((sum, row) => sum + row.amount, 0);
-    const avgPerCustomer = withTopups.length > 0 ? totalVolume / withTopups.length : 0;
-
-    return {
-      topSpenders,
-      lowSpenders,
-      totalVolume,
-      avgPerCustomer,
-      customersWithTopups: withTopups.length,
+  useEffect(() => {
+    if (period === "all") {
+      setRangedTopups(null);
+      setRangeError(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingRange(true);
+    setRangeError(null);
+    getTopupsInRange(periodStart(period), new Date())
+      .then((data) => {
+        if (!cancelled) setRangedTopups(data);
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setRangeError(error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRange(false);
+      });
+    return () => {
+      cancelled = true;
     };
-  }, [customers]);
+  }, [period]);
+
+  const ranked = useMemo(() => {
+    let entries: RankedEntry[];
+
+    if (rangedTopups) {
+      const byCustomer = new Map<string, { name: string; amount: number }>();
+      for (const topup of rangedTopups) {
+        const existing = byCustomer.get(topup.customerId);
+        if (existing) {
+          existing.amount += topup.amount;
+        } else {
+          byCustomer.set(topup.customerId, { name: topup.customerName, amount: topup.amount });
+        }
+      }
+      entries = Array.from(byCustomer.entries()).map(([id, v]) => ({
+        id,
+        name: v.name,
+        phone: customers.find((c) => c.id === id)?.mainPhone ?? "",
+        amount: v.amount,
+      }));
+    } else {
+      entries = customers
+        .map((c) => ({ id: c.id, name: c.name, phone: c.mainPhone, amount: c.totalTopupAmount ?? 0 }))
+        .filter((row) => row.amount > 0);
+    }
+
+    const topSpenders = [...entries].sort((a, b) => b.amount - a.amount).slice(0, 10);
+    const lowSpenders = [...entries].sort((a, b) => a.amount - b.amount).slice(0, 10);
+    const totalVolume = entries.reduce((sum, row) => sum + row.amount, 0);
+    const avgPerCustomer = entries.length > 0 ? totalVolume / entries.length : 0;
+
+    return { topSpenders, lowSpenders, totalVolume, avgPerCustomer, customersWithTopups: entries.length };
+  }, [customers, rangedTopups]);
 
   const chartData = useMemo(
     () =>
       ranked.topSpenders.map((row) => ({
-        name: row.customer.name.length > 12 ? `${row.customer.name.slice(0, 12)}…` : row.customer.name,
+        name: row.name.length > 12 ? `${row.name.slice(0, 12)}…` : row.name,
         amount: row.amount,
       })),
     [ranked.topSpenders]
   );
 
+  const periods: Array<{ key: Period; label: string }> = [
+    { key: "today", label: t.periodToday },
+    { key: "week", label: t.periodWeek },
+    { key: "month", label: t.periodMonth },
+    { key: "all", label: t.periodAll },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-ink-900">{t.analyticsTitle}</h1>
-        <p className="mt-0.5 text-sm text-ink-500">{t.analyticsSubtitle}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-ink-900">{t.analyticsTitle}</h1>
+          <p className="mt-0.5 text-sm text-ink-500">{t.analyticsSubtitle}</p>
+        </div>
+        <div className="flex rounded-lg border border-ink-300 bg-white p-1 text-sm">
+          {periods.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`rounded-md px-3 py-1.5 font-medium transition ${
+                period === p.key ? "bg-amtel-600 text-white" : "text-ink-600 hover:bg-ink-100"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -135,6 +212,16 @@ export default function AnalyticsView() {
           <AlertTriangle size={22} className="text-amtel-600" />
           <p className="font-medium text-amtel-700">{t.couldntLoadCustomers}</p>
           <p className="max-w-sm text-sm text-amtel-600">{loadError}</p>
+        </div>
+      ) : rangeError ? (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-amtel-200 bg-amtel-50 py-16 text-center">
+          <AlertTriangle size={22} className="text-amtel-600" />
+          <p className="font-medium text-amtel-700">{t.couldntLoadTopups}</p>
+          <p className="max-w-sm text-sm text-amtel-600">{rangeError}</p>
+        </div>
+      ) : loadingRange ? (
+        <div className="flex items-center justify-center rounded-xl border border-ink-100 bg-white py-20">
+          <Loader2 size={24} className="animate-spin text-amtel-600" />
         </div>
       ) : (
         <>

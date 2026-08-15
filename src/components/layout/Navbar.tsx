@@ -3,17 +3,16 @@ import { LogOut, UserCircle, ChevronDown, UserCog, Languages, Menu } from "lucid
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import Logo from "./Logo";
-import ProfileModal from "../auth/ProfileModal";
 
 interface NavbarProps {
   onToggleSidebar: () => void;
+  onOpenSettings: () => void;
 }
 
-export default function Navbar({ onToggleSidebar }: NavbarProps) {
+export default function Navbar({ onToggleSidebar, onOpenSettings }: NavbarProps) {
   const { user, profilePhoto, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -84,7 +83,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    setProfileOpen(true);
+                    onOpenSettings();
                   }}
                   className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm text-ink-700 transition hover:bg-ink-100"
                 >
@@ -106,8 +105,6 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
           </div>
         </div>
       </div>
-
-      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
     </header>
   );
 }

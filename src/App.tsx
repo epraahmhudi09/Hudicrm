@@ -11,6 +11,8 @@ import BundlesView from "./components/bundles/BundlesView";
 import AnalyticsView from "./components/analytics/AnalyticsView";
 import SmsRemindersView from "./components/smsReminders/SmsRemindersView";
 import EscalationsView from "./components/escalations/EscalationsView";
+import DashboardView from "./components/dashboard/DashboardView";
+import SettingsView from "./components/settings/SettingsView";
 import StatsOverview from "./components/dashboard/StatsOverview";
 import SearchFilterBar from "./components/customers/SearchFilterBar";
 import CustomerTable from "./components/customers/CustomerTable";
@@ -50,7 +52,7 @@ const SuspenseModalFallback = (
 function Dashboard() {
   const { t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [view, setView] = useState<AppView>("customers");
+  const [view, setView] = useState<AppView>("dashboard");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -194,7 +196,10 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-ink-100">
-      <Navbar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+      <Navbar
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        onOpenSettings={() => setView("settings")}
+      />
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -222,7 +227,11 @@ function Dashboard() {
       )}
 
       <main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6">
-        {view === "customers" ? (
+        {view === "dashboard" ? (
+          <DashboardView />
+        ) : view === "settings" ? (
+          <SettingsView />
+        ) : view === "customers" ? (
           <>
             <StatsOverview customers={customers} />
 

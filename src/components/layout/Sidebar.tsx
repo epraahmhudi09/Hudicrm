@@ -2,9 +2,11 @@ import { type ReactNode } from "react";
 import {
   BarChart3,
   CalendarX2,
+  LayoutDashboard,
   MessageSquareText,
   Package,
   PhoneCall,
+  Settings,
   Users,
   Wallet,
   X,
@@ -13,13 +15,15 @@ import { useLanguage } from "../../context/LanguageContext";
 import Logo from "./Logo";
 
 export type AppView =
+  | "dashboard"
   | "customers"
   | "debtCustomers"
   | "expiredBundles"
   | "bundles"
   | "analytics"
   | "smsReminders"
-  | "escalations";
+  | "escalations"
+  | "settings";
 
 interface SidebarProps {
   open: boolean;
@@ -32,6 +36,7 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
   const { t } = useLanguage();
 
   const items: Array<{ key: AppView; label: string; icon: ReactNode }> = [
+    { key: "dashboard", label: t.navDashboard, icon: <LayoutDashboard size={18} /> },
     { key: "customers", label: t.navCustomers, icon: <Users size={18} /> },
     { key: "debtCustomers", label: t.navDebtCustomers, icon: <Wallet size={18} /> },
     { key: "expiredBundles", label: t.navExpiredBundles, icon: <CalendarX2 size={18} /> },
@@ -40,6 +45,12 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
     { key: "bundles", label: t.navBundles, icon: <Package size={18} /> },
     { key: "analytics", label: t.navAnalytics, icon: <BarChart3 size={18} /> },
   ];
+
+  const settingsItem: { key: AppView; label: string; icon: ReactNode } = {
+    key: "settings",
+    label: t.navSettings,
+    icon: <Settings size={18} />,
+  };
 
   return (
     <>
@@ -63,7 +74,7 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {items.map((item) => (
             <button
               key={item.key}
@@ -82,6 +93,23 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
             </button>
           ))}
         </nav>
+
+        <div className="border-t border-ink-100 p-3">
+          <button
+            onClick={() => {
+              onNavigate(settingsItem.key);
+              onClose();
+            }}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+              view === settingsItem.key
+                ? "bg-amtel-50 text-amtel-700"
+                : "text-ink-700 hover:bg-ink-100"
+            }`}
+          >
+            {settingsItem.icon}
+            {settingsItem.label}
+          </button>
+        </div>
       </aside>
     </>
   );

@@ -128,6 +128,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // by total spend even when an amount doesn't map to a known tier.
     await incrementFields(`customers/${match.id}`, { totalTopupAmount: transaction.amount });
 
+    // Flat, top-level record (not a customer subcollection) so date-ranged
+    // analytics queries only need Firestore's automatic single-field index
+    // on createdAt — same deterministic ID as the activity doc below, so a
+    // retried/duplicated forward overwrites instead of double-counting.
+    await setDocument(`topups/evc-${transaction.transactionId}`, {
+      customerId: match.id,
+      customerName: String(match.name ?? "Customer"),
+      amount: transaction.amount,
+      createdAt: transaction.occurredAt,
+    });
+
     const renewalNote = newExpiry
       ? ` Bundle renewed until ${newExpiry.toISOString()}${usesAssignedBundle ? " (assigned bundle)" : " (best-effort match — no bundle assigned)"}.`
       : ` (No matching bundle tier for $${transaction.amount.toFixed(2)} — expiry left unchanged.)`;

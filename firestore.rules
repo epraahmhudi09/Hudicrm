@@ -208,6 +208,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // One flat record per top-up transaction, written by the SMS webhook
+    // (service account, bypasses these rules) alongside the cumulative
+    // increment on the customer doc — lets Analytics query a date range
+    // without a collection-group query over customers/*/activities.
+    match /topups/{topupId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;
