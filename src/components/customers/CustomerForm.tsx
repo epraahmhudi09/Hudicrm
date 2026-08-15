@@ -6,10 +6,12 @@ import type { Bundle } from "../../types/bundle";
 import { getBundlesRealtime } from "../../services/bundleService";
 import { formatDuration } from "../bundles/BundleTable";
 import { PHONE_PATTERN } from "../../utils/customerValidation";
+import { normalizePhone } from "../../utils/phone";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface CustomerFormProps {
   customer: Customer | null;
+  existingCustomers: Customer[];
   onSubmit: (data: CustomerFormData, createdAt?: Date) => Promise<void>;
   onClose: () => void;
 }
@@ -27,7 +29,12 @@ function todayInputValue(): string {
   return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
-export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFormProps) {
+export default function CustomerForm({
+  customer,
+  existingCustomers,
+  onSubmit,
+  onClose,
+}: CustomerFormProps) {
   const { t } = useLanguage();
   const isEdit = Boolean(customer);
   const [form, setForm] = useState<CustomerFormData>(EMPTY_CUSTOMER_FORM);
@@ -63,6 +70,18 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
     setSubmitError(null);
   }, [customer]);
 
+  function findPhoneOwner(phone: string): Customer | undefined {
+    const normalized = normalizePhone(phone);
+    if (!normalized) return undefined;
+    return existingCustomers.find((c) => {
+      if (customer && c.id === customer.id) return false;
+      return (
+        normalizePhone(c.mainPhone) === normalized ||
+        (c.backupPhone && normalizePhone(c.backupPhone) === normalized)
+      );
+    });
+  }
+
   function validate(): boolean {
     const next: FieldErrors = {};
 
@@ -72,10 +91,18 @@ export default function CustomerForm({ customer, onSubmit, onClose }: CustomerFo
       next.mainPhone = t.mainPhoneRequired;
     } else if (!PHONE_PATTERN.test(form.mainPhone.trim())) {
       next.mainPhone = t.phoneInvalid;
+    } else {
+      const owner = findPhoneOwner(form.mainPhone.trim());
+      if (owner) next.mainPhone = t.duplicatePhone(owner.name);
     }
 
-    if (form.backupPhone.trim() && !PHONE_PATTERN.test(form.backupPhone.trim())) {
-      next.backupPhone = t.phoneInvalid;
+    if (form.backupPhone.trim()) {
+      if (!PHONE_PATTERN.test(form.backupPhone.trim())) {
+        next.backupPhone = t.phoneInvalid;
+      } else {
+        const owner = findPhoneOwner(form.backupPhone.trim());
+        if (owner) next.backupPhone = t.duplicatePhone(owner.name);
+      }
     }
 
     if (!form.bundle.trim()) next.bundle = t.bundleRequired;

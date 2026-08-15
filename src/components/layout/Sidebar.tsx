@@ -25,6 +25,7 @@ export type AppView =
   | "analytics"
   | "smsReminders"
   | "escalations"
+  | "downloadApps"
   | "settings";
 
 interface SidebarProps {
@@ -47,6 +48,7 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
     { key: "escalations", label: t.navEscalations, icon: <PhoneCall size={18} /> },
     { key: "bundles", label: t.navBundles, icon: <Package size={18} /> },
     { key: "analytics", label: t.navAnalytics, icon: <BarChart3 size={18} /> },
+    { key: "downloadApps", label: t.navDownloadApps, icon: <Download size={18} /> },
   ];
 
   const settingsItem: { key: AppView; label: string; icon: ReactNode } = {

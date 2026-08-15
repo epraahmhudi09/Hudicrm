@@ -11,6 +11,7 @@ import BundlesView from "./components/bundles/BundlesView";
 import AnalyticsView from "./components/analytics/AnalyticsView";
 import SmsRemindersView from "./components/smsReminders/SmsRemindersView";
 import EscalationsView from "./components/escalations/EscalationsView";
+import DownloadAppsView from "./components/downloadApps/DownloadAppsView";
 import DashboardView from "./components/dashboard/DashboardView";
 import SettingsView from "./components/settings/SettingsView";
 import StatsOverview from "./components/dashboard/StatsOverview";
@@ -280,6 +281,8 @@ function Dashboard() {
           <EscalationsView />
         ) : view === "bundles" ? (
           <BundlesView />
+        ) : view === "downloadApps" ? (
+          <DownloadAppsView />
         ) : (
           <AnalyticsView />
         )}
@@ -288,6 +291,7 @@ function Dashboard() {
       {formOpen && (
         <CustomerForm
           customer={editingCustomer}
+          existingCustomers={customers}
           onSubmit={handleFormSubmit}
           onClose={() => {
             setFormOpen(false);
@@ -298,7 +302,10 @@ function Dashboard() {
 
       {importOpen && (
         <Suspense fallback={SuspenseModalFallback}>
-          <ImportCustomersModal onClose={() => setImportOpen(false)} />
+          <ImportCustomersModal
+            existingCustomers={customers}
+            onClose={() => setImportOpen(false)}
+          />
         </Suspense>
       )}
 

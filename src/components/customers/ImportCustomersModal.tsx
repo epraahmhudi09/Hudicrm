@@ -10,19 +10,24 @@ import {
 } from "lucide-react";
 import { bulkAddCustomers } from "../../services/customerService";
 import { downloadImportTemplate, parseSpreadsheetFile } from "../../utils/spreadsheetImport";
-import type { ValidatedCustomerRow } from "../../utils/customerValidation";
+import { flagDuplicatePhones, type ValidatedCustomerRow } from "../../utils/customerValidation";
 import { getBundlesRealtime } from "../../services/bundleService";
 import type { Bundle } from "../../types/bundle";
+import type { Customer } from "../../types/customer";
 import StatusBadge from "./StatusBadge";
 import { useLanguage } from "../../context/LanguageContext";
 
 interface ImportCustomersModalProps {
+  existingCustomers: Customer[];
   onClose: () => void;
 }
 
 type Stage = "pick" | "preview" | "importing" | "done";
 
-export default function ImportCustomersModal({ onClose }: ImportCustomersModalProps) {
+export default function ImportCustomersModal({
+  existingCustomers,
+  onClose,
+}: ImportCustomersModalProps) {
   const { t } = useLanguage();
   const [stage, setStage] = useState<Stage>("pick");
   const [fileName, setFileName] = useState("");
@@ -53,7 +58,7 @@ export default function ImportCustomersModal({ onClose }: ImportCustomersModalPr
         setParseError("No data rows found. Make sure the first row contains column headers.");
         return;
       }
-      setRows(parsed);
+      setRows(flagDuplicatePhones(parsed, existingCustomers));
       setStage("preview");
     } catch (err) {
       setParseError(

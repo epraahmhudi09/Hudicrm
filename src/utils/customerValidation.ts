@@ -1,5 +1,6 @@
 import type { CustomerFormData, CustomerStatus } from "../types/customer";
 import type { Bundle } from "../types/bundle";
+import { normalizePhone } from "./phone";
 
 export const PHONE_PATTERN = /^[+]?[0-9\s\-()]{7,20}$/;
 
@@ -91,4 +92,44 @@ export function validateCustomerRow(input: CustomerRowInput, bundles: Bundle[]):
     errors,
     assignedBundleMatched,
   };
+}
+
+/**
+ * Flags rows whose phone number is already registered — either by an existing
+ * customer or by an earlier row in the same file. Only rows that are otherwise
+ * valid and not themselves duplicates "reserve" their number, so when the same
+ * number appears twice in a file, the first occurrence imports and later ones
+ * are flagged (rather than every occurrence flagging each other).
+ */
+export function flagDuplicatePhones<T extends { mainPhone: string; backupPhone: string }>(
+  rows: ValidatedCustomerRow[],
+  existingCustomers: T[]
+): ValidatedCustomerRow[] {
+  const takenPhones = new Set<string>();
+  for (const c of existingCustomers) {
+    const main = normalizePhone(c.mainPhone);
+    if (main) takenPhones.add(main);
+    const backup = normalizePhone(c.backupPhone);
+    if (backup) takenPhones.add(backup);
+  }
+
+  const seenInFile = new Set<string>();
+
+  return rows.map((row) => {
+    const main = normalizePhone(row.data.mainPhone);
+    const backup = normalizePhone(row.data.backupPhone);
+    const isDuplicate =
+      (main !== "" && (takenPhones.has(main) || seenInFile.has(main))) ||
+      (backup !== "" && (takenPhones.has(backup) || seenInFile.has(backup)));
+
+    if (isDuplicate) {
+      return { ...row, errors: [...row.errors, "Duplicate phone number — already registered."] };
+    }
+
+    if (row.errors.length === 0) {
+      if (main) seenInFile.add(main);
+      if (backup) seenInFile.add(backup);
+    }
+    return row;
+  });
 }

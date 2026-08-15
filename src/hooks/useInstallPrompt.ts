@@ -45,5 +45,5 @@ export function useInstallPrompt() {
     setDeferredPrompt(null);
   }
 
-  return { canInstall, promptInstall };
+  return { canInstall, installed, promptInstall };
 }

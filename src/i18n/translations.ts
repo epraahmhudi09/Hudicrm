@@ -78,6 +78,7 @@ export interface Translations {
   nameRequired: string;
   mainPhoneRequired: string;
   phoneInvalid: string;
+  duplicatePhone: (name: string) => string;
   bundleRequired: string;
 
   colName: string;
@@ -275,6 +276,21 @@ export interface Translations {
   colEscalatedAt: string;
   escalationsEmptyTitle: string;
   escalationsEmptySubtitle: string;
+
+  navDownloadApps: string;
+  downloadAppsTitle: string;
+  downloadAppsSubtitle: string;
+  downloadAppCrmTitle: string;
+  downloadAppCrmDesc: string;
+  downloadAppCrmInstalled: string;
+  downloadAppCrmManualHint: string;
+  downloadAppTermuxApiTitle: string;
+  downloadAppTermuxApiDesc: string;
+  downloadAppTermuxTitle: string;
+  downloadAppTermuxDesc: string;
+  downloadAppCronJobTitle: string;
+  downloadAppCronJobDesc: string;
+  downloadOpen: string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -360,6 +376,7 @@ export const translations: Record<"en" | "so", Translations> = {
     nameRequired: "Name is required.",
     mainPhoneRequired: "Main phone is required.",
     phoneInvalid: "Enter a valid phone number.",
+    duplicatePhone: (name) => `This phone number is already registered to ${name}.`,
     bundleRequired: "Bundle / plan is required.",
 
     colName: "Name",
@@ -566,6 +583,23 @@ export const translations: Record<"en" | "so", Translations> = {
     colEscalatedAt: "Flagged At",
     escalationsEmptyTitle: "No escalations right now",
     escalationsEmptySubtitle: "Customers appear here once they're 48h+ overdue without renewing.",
+
+    navDownloadApps: "Download Apps",
+    downloadAppsTitle: "Download Apps",
+    downloadAppsSubtitle:
+      "Everything you need to run the CRM and its automation on a phone or PC.",
+    downloadAppCrmTitle: "Hudi CRM App",
+    downloadAppCrmDesc: "Install this CRM on your device for quick, full-screen access.",
+    downloadAppCrmInstalled: "Already installed on this device.",
+    downloadAppCrmManualHint:
+      "Not showing an install button? Android Chrome: tap ⋮ then \"Install app\". iPhone Safari: tap Share then \"Add to Home Screen\".",
+    downloadAppTermuxApiTitle: "Termux:API",
+    downloadAppTermuxApiDesc: "Lets Termux read and send SMS — required for the EVC top-up forwarder.",
+    downloadAppTermuxTitle: "Termux",
+    downloadAppTermuxDesc: "Terminal app that runs the forwarder script on the phone receiving EVC SMS.",
+    downloadAppCronJobTitle: "Cron-job.org",
+    downloadAppCronJobDesc: "Free scheduler that triggers the 24h/48h reminder checks automatically.",
+    downloadOpen: "Open",
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -651,6 +685,7 @@ export const translations: Record<"en" | "so", Translations> = {
     nameRequired: "Magaca waa lagama maarmaan.",
     mainPhoneRequired: "Telefoonka ugu muhiimsan waa lagama maarmaan.",
     phoneInvalid: "Geli lambar telefoon sax ah.",
+    duplicatePhone: (name) => `Lambarkan telefoonka horey ayaa loogu diiwaan geliyay ${name}.`,
     bundleRequired: "Baaqiga / qorshaha waa lagama maarmaan.",
 
     colName: "Magaca",
@@ -860,6 +895,23 @@ export const translations: Record<"en" | "so", Translations> = {
     escalationsEmptyTitle: "Hadda wicitaan lama baahna",
     escalationsEmptySubtitle:
       "Macaamiisha waxay halkan ka muuqan doonaan marka ay 48h+ ka dhacaan iyagoo aan cusboonaysiin.",
+
+    navDownloadApps: "Soo Deji Apps-ka",
+    downloadAppsTitle: "Soo Deji Apps-ka",
+    downloadAppsSubtitle:
+      "Dhammaan waxa aad u baahan tahay si aad u shaqaysiiso CRM-ka iyo automation-kiisa taleefan ama kombuyuutar.",
+    downloadAppCrmTitle: "Hudi CRM App",
+    downloadAppCrmDesc: "Ku rakib CRM-kan taleefankaaga si aad ugu geli dhaqso oo shaashad buuxa ah.",
+    downloadAppCrmInstalled: "Horey ayaa loogu rakibay device-kan.",
+    downloadAppCrmManualHint:
+      "Install button ma soo bixin? Android Chrome: taabo ⋮ kadib \"Install app\". iPhone Safari: taabo Share kadib \"Add to Home Screen\".",
+    downloadAppTermuxApiTitle: "Termux:API",
+    downloadAppTermuxApiDesc: "Wuxuu u oggolaadaa Termux inuu akhriyo oo diro SMS — waa lagama maarmaan forwarder-ka EVC top-up.",
+    downloadAppTermuxTitle: "Termux",
+    downloadAppTermuxDesc: "App terminal ah oo ku shaqaynaya script-ka forwarder-ka taleefanka helaya SMS-ka EVC.",
+    downloadAppCronJobTitle: "Cron-job.org",
+    downloadAppCronJobDesc: "Scheduler bilaash ah oo si toos ah u kiciya hubinta xasuusinta 24h/48h.",
+    downloadOpen: "Fur",
   },
 };
 
