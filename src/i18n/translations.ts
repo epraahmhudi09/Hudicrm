@@ -159,6 +159,16 @@ export interface Translations {
 
   notifTitle: string;
   smsAutomationTitle: string;
+  biometricTitle: string;
+  biometricDesc: string;
+  biometricEnable: string;
+  biometricDisable: string;
+  biometricEnabledOnDevice: string;
+  biometricSetupFailed: string;
+  biometricLockedTitle: string;
+  biometricFailed: string;
+  biometricTryAgain: string;
+  biometricUsePasswordInstead: string;
   notifEnable: string;
   notifEnabled: string;
   notifDenied: string;
@@ -505,6 +515,17 @@ export const translations: Record<"en" | "so", Translations> = {
 
     notifTitle: "Push Notifications",
     smsAutomationTitle: "SMS Automation",
+    biometricTitle: "Biometric Unlock",
+    biometricDesc:
+      "Use Face ID, Touch ID, or fingerprint to unlock the app on this device instead of typing your password every time. Confirm your password once to turn it on.",
+    biometricEnable: "Enable Biometric Unlock",
+    biometricDisable: "Turn Off",
+    biometricEnabledOnDevice: "Enabled on this device.",
+    biometricSetupFailed: "Couldn't set up biometric unlock. Please try again.",
+    biometricLockedTitle: "Unlock with Face ID / Fingerprint to continue.",
+    biometricFailed: "Couldn't verify. Try again, or sign in with your password instead.",
+    biometricTryAgain: "Try Again",
+    biometricUsePasswordInstead: "Use password instead",
     notifEnable: "Enable Notifications",
     notifEnabled: "Notifications enabled on this device",
     notifDenied:
@@ -863,6 +884,17 @@ export const translations: Record<"en" | "so", Translations> = {
 
     notifTitle: "Ogeysiisyada (Notifications)",
     smsAutomationTitle: "SMS Automation",
+    biometricTitle: "Furitaanka Biometric-ka",
+    biometricDesc:
+      "Isticmaal Face ID, Touch ID, ama fingerprint si aad app-ka ugu furto device-kan halkii aad password-ka mar walba qori lahayd. Xaqiiji password-kaaga hal mar si aad u shiddo.",
+    biometricEnable: "Shid Furitaanka Biometric-ka",
+    biometricDisable: "Dami",
+    biometricEnabledOnDevice: "Waa la shiday device-kan.",
+    biometricSetupFailed: "Furitaanka biometric-ka lama dejin karin. Fadlan mar kale isku day.",
+    biometricLockedTitle: "Ku fur Face ID / Fingerprint si aad u sii socoto.",
+    biometricFailed: "Lama xaqiijin karin. Mar kale isku day, ama password-kaaga ku gal.",
+    biometricTryAgain: "Mar Kale Isku Day",
+    biometricUsePasswordInstead: "Isticmaal password-ka",
     notifEnable: "Shid Ogeysiisyada",
     notifEnabled: "Ogeysiisyada waa la shiday device-kan",
     notifDenied:

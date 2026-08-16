@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Loader2, AlertTriangle, Bell, X } from "lucide-react";
+import { Loader2, AlertTriangle, Bell, Fingerprint, X } from "lucide-react";
 import { useAuth, useTenantId } from "./context/AuthContext";
+import { isBiometricEnabled, verifyBiometric } from "./utils/biometricAuth";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
@@ -356,13 +357,68 @@ function AccountNotSetUp() {
   );
 }
 
+function BiometricLockScreen({ uid, onUnlock }: { uid: string; onUnlock: () => void }) {
+  const { t } = useLanguage();
+  const { logout } = useAuth();
+  const [checking, setChecking] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  async function attempt() {
+    setChecking(true);
+    setFailed(false);
+    const ok = await verifyBiometric(uid);
+    setChecking(false);
+    if (ok) onUnlock();
+    else setFailed(true);
+  }
+
+  useEffect(() => {
+    void attempt();
+    // Only auto-prompt once per mount — re-attempts are user-initiated via the button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ink-100 px-4 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amtel-50 text-amtel-600">
+        {checking ? <Loader2 size={28} className="animate-spin" /> : <Fingerprint size={28} />}
+      </div>
+      <p className="max-w-sm font-medium text-ink-900">{t.biometricLockedTitle}</p>
+      {failed && <p className="max-w-sm text-sm text-amtel-600">{t.biometricFailed}</p>}
+      <div className="flex flex-col items-center gap-3">
+        <button
+          onClick={() => void attempt()}
+          disabled={checking}
+          className="flex items-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {checking && <Loader2 size={14} className="animate-spin" />}
+          {t.biometricTryAgain}
+        </button>
+        <button
+          onClick={() => void logout()}
+          className="text-sm text-ink-500 underline-offset-2 hover:underline"
+        >
+          {t.biometricUsePasswordInstead}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const { user, loading, profileLoading, tenantId } = useAuth();
+  const { user, loading, profileLoading, tenantId, sessionAuthenticated } = useAuth();
+  const [biometricUnlocked, setBiometricUnlocked] = useState(false);
 
   if (loading) return <FullScreenLoader />;
   if (!user) return <LoginPage />;
   if (profileLoading) return <FullScreenLoader />;
   if (!tenantId) return <AccountNotSetUp />;
+
+  const needsBiometricUnlock =
+    !sessionAuthenticated && !biometricUnlocked && isBiometricEnabled(user.uid);
+  if (needsBiometricUnlock) {
+    return <BiometricLockScreen uid={user.uid} onUnlock={() => setBiometricUnlocked(true)} />;
+  }
 
   return <Dashboard />;
 }

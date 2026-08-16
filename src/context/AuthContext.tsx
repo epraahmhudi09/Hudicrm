@@ -21,6 +21,10 @@ interface AuthContextValue {
   isPlatformAdmin: boolean;
   profileLoading: boolean;
   loading: boolean;
+  // True once the user has typed their password this page load — lets a
+  // biometric lock gate skip re-prompting right after that, and only
+  // apply when a session was silently restored from persisted storage.
+  sessionAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -35,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [sessionAuthenticated, setSessionAuthenticated] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -65,10 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+    setSessionAuthenticated(true);
   };
 
   const logout = async () => {
     await signOut(auth);
+    setSessionAuthenticated(false);
   };
 
   // Firebase doesn't re-fire onAuthStateChanged after updateProfile(), so the
@@ -93,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isPlatformAdmin,
         profileLoading,
         loading,
+        sessionAuthenticated,
         login,
         logout,
         refreshUser,

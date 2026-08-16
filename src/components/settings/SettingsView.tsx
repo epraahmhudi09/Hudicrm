@@ -5,8 +5,10 @@ import {
   Camera,
   Check,
   Copy,
+  Fingerprint,
   Languages,
   Loader2,
+  ShieldOff,
   UserCircle,
 } from "lucide-react";
 import {
@@ -22,6 +24,12 @@ import { useLanguage } from "../../context/LanguageContext";
 import { resizeImageToDataUrl } from "../../utils/imageResize";
 import { enablePushNotifications, type PushSetupResult } from "../../utils/pushNotifications";
 import { getTenant } from "../../services/tenantService";
+import {
+  disableBiometric,
+  isBiometricEnabled,
+  isBiometricSupported,
+  registerBiometric,
+} from "../../utils/biometricAuth";
 import type { Tenant } from "../../types/tenant";
 
 function friendlyError(code: string): string {
@@ -78,6 +86,99 @@ function CopyRow({ label, value }: { label: string; value: string }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function BiometricCard() {
+  const { t } = useLanguage();
+  const { user } = useAuth();
+  const [supported, setSupported] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<SectionStatus>("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void isBiometricSupported().then(setSupported);
+  }, []);
+
+  useEffect(() => {
+    if (user) setEnabled(isBiometricEnabled(user.uid));
+  }, [user]);
+
+  async function handleEnable(e: FormEvent) {
+    e.preventDefault();
+    if (!user?.email) return;
+    setStatus("saving");
+    setError(null);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+      await registerBiometric(user.uid, user.email, user.displayName ?? "");
+      setEnabled(true);
+      setPassword("");
+      setStatus("success");
+      setTimeout(() => setStatus("idle"), 2000);
+    } catch (err) {
+      const code = (err as { code?: string }).code ?? "";
+      setError(code ? friendlyError(code) : t.biometricSetupFailed);
+      setStatus("error");
+    }
+  }
+
+  function handleDisable() {
+    if (!user) return;
+    disableBiometric(user.uid);
+    setEnabled(false);
+  }
+
+  if (!supported) return null;
+
+  return (
+    <SettingsCard title={t.biometricTitle}>
+      {enabled ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+            <Fingerprint size={16} />
+            {t.biometricEnabledOnDevice}
+          </p>
+          <button
+            type="button"
+            onClick={handleDisable}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-ink-100"
+          >
+            <ShieldOff size={13} />
+            {t.biometricDisable}
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleEnable} className="space-y-3">
+          <p className="text-sm text-ink-500">{t.biometricDesc}</p>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t.currentPassword}
+            autoComplete="current-password"
+            className="w-full rounded-lg border border-ink-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+          />
+          <button
+            type="submit"
+            disabled={status === "saving" || !password}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            {status === "saving" && <Loader2 size={14} className="animate-spin" />}
+            <Fingerprint size={14} />
+            {t.biometricEnable}
+          </button>
+          {error && (
+            <p className="flex items-center gap-1.5 text-xs text-amtel-600">
+              <AlertCircle size={12} /> {error}
+            </p>
+          )}
+        </form>
+      )}
+    </SettingsCard>
   );
 }
 
@@ -346,6 +447,8 @@ export default function SettingsView() {
           )}
         </form>
       </SettingsCard>
+
+      <BiometricCard />
 
       <SettingsCard title={t.notifTitle}>
         <button
