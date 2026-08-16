@@ -26,9 +26,12 @@ import { enablePushNotifications, type PushSetupResult } from "../../utils/pushN
 import { getTenant } from "../../services/tenantService";
 import {
   disableBiometric,
+  getAutoLockOption,
   isBiometricEnabled,
   isBiometricSupported,
   registerBiometric,
+  setAutoLockOption,
+  type AutoLockOption,
 } from "../../utils/biometricAuth";
 import type { Tenant } from "../../types/tenant";
 
@@ -89,6 +92,33 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function AutoLockOptionRow({
+  label,
+  active,
+  onSelect,
+}: {
+  label: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-ink-900 transition hover:bg-ink-100"
+    >
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+          active ? "border-amtel-600" : "border-ink-300"
+        }`}
+      >
+        {active && <span className="h-2 w-2 rounded-full bg-amtel-600" />}
+      </span>
+      {label}
+    </button>
+  );
+}
+
 function BiometricCard() {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -97,14 +127,24 @@ function BiometricCard() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<SectionStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [autoLock, setAutoLock] = useState<AutoLockOption>("immediately");
 
   useEffect(() => {
     void isBiometricSupported().then(setSupported);
   }, []);
 
   useEffect(() => {
-    if (user) setEnabled(isBiometricEnabled(user.uid));
+    if (user) {
+      setEnabled(isBiometricEnabled(user.uid));
+      setAutoLock(getAutoLockOption(user.uid));
+    }
   }, [user]);
+
+  function handleAutoLockChange(option: AutoLockOption) {
+    if (!user) return;
+    setAutoLockOption(user.uid, option);
+    setAutoLock(option);
+  }
 
   async function handleEnable(e: FormEvent) {
     e.preventDefault();
@@ -137,19 +177,42 @@ function BiometricCard() {
   return (
     <SettingsCard title={t.biometricTitle}>
       {enabled ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-1.5 text-sm text-emerald-600">
-            <Fingerprint size={16} />
-            {t.biometricEnabledOnDevice}
-          </p>
-          <button
-            type="button"
-            onClick={handleDisable}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-ink-100"
-          >
-            <ShieldOff size={13} />
-            {t.biometricDisable}
-          </button>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+              <Fingerprint size={16} />
+              {t.biometricEnabledOnDevice}
+            </p>
+            <button
+              type="button"
+              onClick={handleDisable}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-ink-100"
+            >
+              <ShieldOff size={13} />
+              {t.biometricDisable}
+            </button>
+          </div>
+
+          <div className="border-t border-ink-100 pt-4">
+            <p className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+              {t.biometricAutoLockTitle}
+            </p>
+            <AutoLockOptionRow
+              label={t.biometricAutoLockImmediately}
+              active={autoLock === "immediately"}
+              onSelect={() => handleAutoLockChange("immediately")}
+            />
+            <AutoLockOptionRow
+              label={t.biometricAutoLock1Min}
+              active={autoLock === "1min"}
+              onSelect={() => handleAutoLockChange("1min")}
+            />
+            <AutoLockOptionRow
+              label={t.biometricAutoLock30Min}
+              active={autoLock === "30min"}
+              onSelect={() => handleAutoLockChange("30min")}
+            />
+          </div>
         </div>
       ) : (
         <form onSubmit={handleEnable} className="space-y-3">

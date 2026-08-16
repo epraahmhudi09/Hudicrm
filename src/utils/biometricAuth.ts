@@ -13,6 +13,44 @@ function storageKey(uid: string): string {
   return `hudicrm_biometric_credential_${uid}`;
 }
 
+function autoLockKey(uid: string): string {
+  return `hudicrm_biometric_autolock_${uid}`;
+}
+
+function lastUnlockKey(uid: string): string {
+  return `hudicrm_biometric_last_unlock_${uid}`;
+}
+
+export type AutoLockOption = "immediately" | "1min" | "30min";
+
+const AUTO_LOCK_THRESHOLD_MS: Record<AutoLockOption, number> = {
+  immediately: 0,
+  "1min": 60 * 1000,
+  "30min": 30 * 60 * 1000,
+};
+
+export function getAutoLockOption(uid: string): AutoLockOption {
+  const stored = localStorage.getItem(autoLockKey(uid));
+  return stored === "immediately" || stored === "1min" || stored === "30min" ? stored : "immediately";
+}
+
+export function setAutoLockOption(uid: string, option: AutoLockOption): void {
+  localStorage.setItem(autoLockKey(uid), option);
+}
+
+/** Call after any successful unlock (password login or biometric) to (re)start the grace period. */
+export function recordUnlock(uid: string): void {
+  localStorage.setItem(lastUnlockKey(uid), String(Date.now()));
+}
+
+/** True if the app was unlocked recently enough (per the user's auto-lock setting) to skip re-prompting. */
+export function isUnlockStillValid(uid: string): boolean {
+  const threshold = AUTO_LOCK_THRESHOLD_MS[getAutoLockOption(uid)];
+  if (threshold === 0) return false;
+  const lastUnlock = Number(localStorage.getItem(lastUnlockKey(uid)) ?? 0);
+  return Date.now() - lastUnlock < threshold;
+}
+
 // Cast to BufferSource: TS's lib.dom types crypto.getRandomValues's return
 // as Uint8Array<ArrayBufferLike> (permits SharedArrayBuffer), which isn't
 // assignable to BufferSource (Uint8Array<ArrayBuffer> only) — the value
@@ -96,4 +134,6 @@ export async function verifyBiometric(uid: string): Promise<boolean> {
 
 export function disableBiometric(uid: string): void {
   localStorage.removeItem(storageKey(uid));
+  localStorage.removeItem(autoLockKey(uid));
+  localStorage.removeItem(lastUnlockKey(uid));
 }

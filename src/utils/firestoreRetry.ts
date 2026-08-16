@@ -7,18 +7,33 @@ import {
   type QuerySnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
+import { auth } from "../firebase";
 
 /**
- * Once onSnapshot's error callback fires, Firestore terminates that
- * listener permanently — it does not resubscribe on its own. Right after a
- * fresh page load, the very first listener can hit a transient
- * permission-denied simply because Firebase Auth's ID token hasn't finished
- * attaching to the connection yet (a known race between Auth session
- * rehydration and Firestore's own connection setup); without a retry, that
- * one-time hiccup — even though the permissions are actually fine a moment
- * later — leaves the UI showing an error, or stuck loading forever, until
- * the user manually refreshes. Retries happen silently; onError only fires
- * once every attempt is spent.
+ * Right after a hard refresh, Firebase Auth's ID token can still be
+ * attaching to the connection when a Firestore listener tries to subscribe,
+ * which reads as a permission-denied even though the user is genuinely
+ * signed in. Forcing a token fetch first (this resolves once a valid token
+ * is available, refreshing if needed — it's a no-op if one's already
+ * attached) closes that race at the source, instead of just reacting to it
+ * after the fact.
+ */
+async function ensureAuthReady(): Promise<void> {
+  try {
+    await auth.currentUser?.getIdToken();
+  } catch {
+    // If this fails, the subscribe attempt below will too, and the retry
+    // loop takes over from there.
+  }
+}
+
+/**
+ * Even with the token pre-fetch above, onSnapshot's error callback still
+ * terminates that listener permanently — it does not resubscribe on its
+ * own — so any other transient hiccup (a slow network, a brief disconnect)
+ * would otherwise leave the UI stuck on an error or an infinite loading
+ * screen until the user manually refreshes. Retries happen silently;
+ * onError only fires once every attempt is spent.
  */
 function withRetry<TSnapshot>(
   subscribeOnce: (
@@ -29,7 +44,7 @@ function withRetry<TSnapshot>(
   onError?: (error: Error) => void,
   options: { retries?: number; retryDelayMs?: number } = {}
 ): Unsubscribe {
-  const { retries = 3, retryDelayMs = 1200 } = options;
+  const { retries = 4, retryDelayMs = 1500 } = options;
   let unsubscribed = false;
   let attemptsLeft = retries;
   let currentUnsubscribe: Unsubscribe = () => {};
@@ -54,7 +69,9 @@ function withRetry<TSnapshot>(
     );
   }
 
-  subscribe();
+  void ensureAuthReady().then(() => {
+    if (!unsubscribed) subscribe();
+  });
 
   return () => {
     unsubscribed = true;

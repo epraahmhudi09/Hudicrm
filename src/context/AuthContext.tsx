@@ -14,6 +14,7 @@ import {
 import { doc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { onDocSnapshotWithRetry } from "../utils/firestoreRetry";
+import { recordUnlock } from "../utils/biometricAuth";
 
 interface AuthContextValue {
   user: User | null;
@@ -21,11 +22,12 @@ interface AuthContextValue {
   tenantId: string | null;
   isPlatformAdmin: boolean;
   profileLoading: boolean;
+  // True only once every retry to load the users/{uid} profile doc has
+  // failed — distinct from tenantId simply being null because the account
+  // was never provisioned, so the UI can tell "couldn't load, try again"
+  // apart from "this account isn't set up yet."
+  profileLoadFailed: boolean;
   loading: boolean;
-  // True once the user has typed their password this page load — lets a
-  // biometric lock gate skip re-prompting right after that, and only
-  // apply when a session was silently restored from persisted storage.
-  sessionAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [sessionAuthenticated, setSessionAuthenticated] = useState(false);
+  const [profileLoadFailed, setProfileLoadFailed] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -56,9 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTenantId(null);
       setIsPlatformAdmin(false);
       setProfileLoading(false);
+      setProfileLoadFailed(false);
       return;
     }
     setProfileLoading(true);
+    setProfileLoadFailed(false);
     const unsubscribe = onDocSnapshotWithRetry(
       doc(db, "users", user.uid),
       (snap) => {
@@ -67,25 +71,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTenantId((data?.tenantId as string | undefined) ?? null);
         setIsPlatformAdmin((data?.isPlatformAdmin as boolean | undefined) ?? false);
         setProfileLoading(false);
+        setProfileLoadFailed(false);
       },
       () => {
-        // Every retry failed — stop spinning forever; App.tsx's "account not
-        // set up" screen (tenantId still null) at least gives a way out
-        // (sign out and try again) instead of a permanent loading screen.
+        // Every retry failed — stop spinning forever and let the UI show a
+        // "couldn't load, try again" state instead of hanging indefinitely.
         setProfileLoading(false);
+        setProfileLoadFailed(true);
       }
     );
     return unsubscribe;
   }, [user]);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-    setSessionAuthenticated(true);
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    recordUnlock(credential.user.uid);
   };
 
   const logout = async () => {
     await signOut(auth);
-    setSessionAuthenticated(false);
   };
 
   // Firebase doesn't re-fire onAuthStateChanged after updateProfile(), so the
@@ -109,8 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tenantId,
         isPlatformAdmin,
         profileLoading,
+        profileLoadFailed,
         loading,
-        sessionAuthenticated,
         login,
         logout,
         refreshUser,

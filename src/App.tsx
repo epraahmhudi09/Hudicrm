@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle, Bell, Fingerprint, X } from "lucide-react";
 import { useAuth, useTenantId } from "./context/AuthContext";
-import { isBiometricEnabled, verifyBiometric } from "./utils/biometricAuth";
+import { isBiometricEnabled, isUnlockStillValid, recordUnlock, verifyBiometric } from "./utils/biometricAuth";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
@@ -357,6 +357,34 @@ function AccountNotSetUp() {
   );
 }
 
+// Distinct from AccountNotSetUp: this is a transient load failure (every
+// retry in onDocSnapshotWithRetry was exhausted), not "this account was
+// never provisioned" — a reload is the right recovery, not a support message.
+function ProfileLoadError() {
+  const { t } = useLanguage();
+  const { logout } = useAuth();
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-ink-100 px-4 text-center">
+      <AlertTriangle size={28} className="text-amtel-600" />
+      <p className="max-w-sm font-medium text-ink-900">{t.profileLoadFailed}</p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-lg bg-amtel-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700"
+        >
+          {t.biometricTryAgain}
+        </button>
+        <button
+          onClick={() => void logout()}
+          className="text-sm text-ink-500 underline-offset-2 hover:underline"
+        >
+          {t.signOut}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BiometricLockScreen({ uid, onUnlock }: { uid: string; onUnlock: () => void }) {
   const { t } = useLanguage();
   const { logout } = useAuth();
@@ -368,8 +396,12 @@ function BiometricLockScreen({ uid, onUnlock }: { uid: string; onUnlock: () => v
     setFailed(false);
     const ok = await verifyBiometric(uid);
     setChecking(false);
-    if (ok) onUnlock();
-    else setFailed(true);
+    if (ok) {
+      recordUnlock(uid);
+      onUnlock();
+    } else {
+      setFailed(true);
+    }
   }
 
   useEffect(() => {
@@ -406,16 +438,17 @@ function BiometricLockScreen({ uid, onUnlock }: { uid: string; onUnlock: () => v
 }
 
 export default function App() {
-  const { user, loading, profileLoading, tenantId, sessionAuthenticated } = useAuth();
+  const { user, loading, profileLoading, profileLoadFailed, tenantId } = useAuth();
   const [biometricUnlocked, setBiometricUnlocked] = useState(false);
 
   if (loading) return <FullScreenLoader />;
   if (!user) return <LoginPage />;
   if (profileLoading) return <FullScreenLoader />;
+  if (profileLoadFailed) return <ProfileLoadError />;
   if (!tenantId) return <AccountNotSetUp />;
 
   const needsBiometricUnlock =
-    !sessionAuthenticated && !biometricUnlocked && isBiometricEnabled(user.uid);
+    !biometricUnlocked && isBiometricEnabled(user.uid) && !isUnlockStillValid(user.uid);
   if (needsBiometricUnlock) {
     return <BiometricLockScreen uid={user.uid} onUnlock={() => setBiometricUnlocked(true)} />;
   }

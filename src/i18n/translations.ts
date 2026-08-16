@@ -30,6 +30,7 @@ export interface Translations {
   editProfile: string;
   signOut: string;
   accountNotSetUp: string;
+  profileLoadFailed: string;
 
   editProfileTitle: string;
   uploading: string;
@@ -169,6 +170,10 @@ export interface Translations {
   biometricFailed: string;
   biometricTryAgain: string;
   biometricUsePasswordInstead: string;
+  biometricAutoLockTitle: string;
+  biometricAutoLockImmediately: string;
+  biometricAutoLock1Min: string;
+  biometricAutoLock30Min: string;
   notifEnable: string;
   notifEnabled: string;
   notifDenied: string;
@@ -383,6 +388,7 @@ export const translations: Record<"en" | "so", Translations> = {
     signOut: "Sign out",
     accountNotSetUp:
       "Your account isn't fully set up yet. Please contact the person who created your login.",
+    profileLoadFailed: "Couldn't load your account. Check your connection and try again.",
 
     editProfileTitle: "Edit Profile",
     uploading: "Uploading...",
@@ -526,6 +532,10 @@ export const translations: Record<"en" | "so", Translations> = {
     biometricFailed: "Couldn't verify. Try again, or sign in with your password instead.",
     biometricTryAgain: "Try Again",
     biometricUsePasswordInstead: "Use password instead",
+    biometricAutoLockTitle: "Automatically lock",
+    biometricAutoLockImmediately: "Immediately",
+    biometricAutoLock1Min: "After 1 minute",
+    biometricAutoLock30Min: "After 30 minutes",
     notifEnable: "Enable Notifications",
     notifEnabled: "Notifications enabled on this device",
     notifDenied:
@@ -751,6 +761,7 @@ export const translations: Record<"en" | "so", Translations> = {
     signOut: "Ka bax",
     accountNotSetUp:
       "Akoonkaaga weli si buuxda looma dejin. Fadlan la xiriir qofka ku sameeyay login-kaaga.",
+    profileLoadFailed: "Akoonkaaga lama soo geli karin. Hubi internet-ka kadibna mar kale isku day.",
 
     editProfileTitle: "Wax ka beddel Profile-ka",
     uploading: "Waa la soo gelinayaa...",
@@ -895,6 +906,10 @@ export const translations: Record<"en" | "so", Translations> = {
     biometricFailed: "Lama xaqiijin karin. Mar kale isku day, ama password-kaaga ku gal.",
     biometricTryAgain: "Mar Kale Isku Day",
     biometricUsePasswordInstead: "Isticmaal password-ka",
+    biometricAutoLockTitle: "Si toos ah u xidh",
+    biometricAutoLockImmediately: "Isla markiiba",
+    biometricAutoLock1Min: "1 daqiiqo kadib",
+    biometricAutoLock30Min: "30 daqiiqo kadib",
     notifEnable: "Shid Ogeysiisyada",
     notifEnabled: "Ogeysiisyada waa la shiday device-kan",
     notifDenied:
