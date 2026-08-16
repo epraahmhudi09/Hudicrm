@@ -110,7 +110,11 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
+      // isPlatformAdmin() is also allowed here (in addition to the tenant
+      // match) because the admin Users page counts each tenant's customers
+      // via a tenantId-filtered aggregation query — the filter still makes
+      // this provable for list/count, unlike an unfiltered list would be.
+      allow read: if isSignedIn() && (resource.data.tenantId == getUserTenantId() || isPlatformAdmin());
       allow create: if isSignedIn() && hasValidCustomerSchema(request.resource.data);
       allow update: if isSignedIn() && resource.data.tenantId == getUserTenantId() &&
         hasValidCustomerUpdate(request.resource.data);
