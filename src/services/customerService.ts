@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -14,6 +13,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { onQuerySnapshotWithRetry } from "../utils/firestoreRetry";
 import type {
   ActivityType,
   Customer,
@@ -93,7 +93,7 @@ export function getCustomersRealtime(
 ): Unsubscribe {
   const q = query(customersRef, where("tenantId", "==", tenantId));
 
-  return onSnapshot(
+  return onQuerySnapshotWithRetry(
     q,
     (snapshot) => {
       const customers = snapshot.docs.map((docSnap) => ({
@@ -108,9 +108,7 @@ export function getCustomersRealtime(
       customers.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
       onData(customers);
     },
-    (error) => {
-      onError?.(error);
-    }
+    onError
   );
 }
 
@@ -165,7 +163,7 @@ export function getActivitiesRealtime(
   const activitiesRef = collection(db, CUSTOMERS_COLLECTION, customerId, "activities");
   const q = query(activitiesRef, orderBy("createdAt", "desc"));
 
-  return onSnapshot(
+  return onQuerySnapshotWithRetry(
     q,
     (snapshot) => {
       const activities = snapshot.docs.map((docSnap) => ({
@@ -174,6 +172,6 @@ export function getActivitiesRealtime(
       })) as CustomerActivity[];
       onData(activities);
     },
-    (error) => onError?.(error)
+    onError
   );
 }

@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
@@ -11,6 +10,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { onQuerySnapshotWithRetry } from "../utils/firestoreRetry";
 import type { DebtCustomer, DebtCustomerFormData } from "../types/debtCustomer";
 
 const DEBT_CUSTOMERS_COLLECTION = "debtCustomers";
@@ -45,7 +45,7 @@ export function getDebtCustomersRealtime(
 ): Unsubscribe {
   const q = query(debtCustomersRef, where("tenantId", "==", tenantId));
 
-  return onSnapshot(
+  return onQuerySnapshotWithRetry(
     q,
     (snapshot) => {
       const debtCustomers = snapshot.docs.map((docSnap) => ({
@@ -59,9 +59,7 @@ export function getDebtCustomersRealtime(
       );
       onData(debtCustomers);
     },
-    (error) => {
-      onError?.(error);
-    }
+    onError
   );
 }
 

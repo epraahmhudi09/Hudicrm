@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
@@ -11,6 +10,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { onQuerySnapshotWithRetry } from "../utils/firestoreRetry";
 import type { Bundle, BundleFormData } from "../types/bundle";
 
 const BUNDLES_COLLECTION = "bundles";
@@ -42,7 +42,7 @@ export function getBundlesRealtime(
 ): Unsubscribe {
   const q = query(bundlesRef, where("tenantId", "==", tenantId));
 
-  return onSnapshot(
+  return onQuerySnapshotWithRetry(
     q,
     (snapshot) => {
       const bundles = snapshot.docs.map((docSnap) => ({
@@ -52,9 +52,7 @@ export function getBundlesRealtime(
       bundles.sort((a, b) => a.amount - b.amount);
       onData(bundles);
     },
-    (error) => {
-      onError?.(error);
-    }
+    onError
   );
 }
 

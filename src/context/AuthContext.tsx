@@ -11,8 +11,9 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { onDocSnapshotWithRetry } from "../utils/firestoreRetry";
 
 interface AuthContextValue {
   user: User | null;
@@ -58,13 +59,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     setProfileLoading(true);
-    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      const data = snap.data();
-      setProfilePhoto((data?.photoDataUrl as string | undefined) ?? null);
-      setTenantId((data?.tenantId as string | undefined) ?? null);
-      setIsPlatformAdmin((data?.isPlatformAdmin as boolean | undefined) ?? false);
-      setProfileLoading(false);
-    });
+    const unsubscribe = onDocSnapshotWithRetry(
+      doc(db, "users", user.uid),
+      (snap) => {
+        const data = snap.data();
+        setProfilePhoto((data?.photoDataUrl as string | undefined) ?? null);
+        setTenantId((data?.tenantId as string | undefined) ?? null);
+        setIsPlatformAdmin((data?.isPlatformAdmin as boolean | undefined) ?? false);
+        setProfileLoading(false);
+      },
+      () => {
+        // Every retry failed — stop spinning forever; App.tsx's "account not
+        // set up" screen (tenantId still null) at least gives a way out
+        // (sign out and try again) instead of a permanent loading screen.
+        setProfileLoading(false);
+      }
+    );
     return unsubscribe;
   }, [user]);
 
