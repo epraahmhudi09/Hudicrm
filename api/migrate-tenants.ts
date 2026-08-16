@@ -1,9 +1,4 @@
-import {
-  addDocument,
-  listCollection,
-  setDocument,
-  updateFields,
-} from "./_lib/firestoreRest.js";
+import { addDocument, listCollection, updateFields } from "./_lib/firestoreRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 const BACKFILL_COLLECTIONS = ["customers", "bundles", "debtCustomers", "topups", "outboundSms"];
@@ -39,10 +34,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ownerName = (req.query.ownerName as string | undefined) ?? "Owner";
     const businessName = (req.query.businessName as string | undefined) ?? "Amtel";
 
+    // Pre-migration users/{uid} docs never stored email (that field is new
+    // in this rollout), so there's nothing to match the ?email= param
+    // against yet — at this point in the rollout there's exactly one
+    // existing user (the sole pre-multi-tenant account), so just take it.
     const users = await listCollection("users");
-    const owner = users.find((u) => u.email === email);
+    const owner = users[0];
     if (!owner) {
-      res.status(404).json({ ok: false, error: "user_not_found", message: `No users/{uid} doc has email=${email}` });
+      res.status(404).json({ ok: false, error: "no_users_found" });
       return;
     }
 
@@ -59,7 +58,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         active: true,
         createdAt: new Date(),
       });
-      await setDocument(`users/${owner.id}`, {
+      // updateFields (partial merge), not setDocument (full replace) — the
+      // owner's existing doc may already carry photoDataUrl/fcmToken from
+      // before the multi-tenant rollout, and those must survive untouched.
+      await updateFields(`users/${owner.id}`, {
         tenantId,
         email,
         isPlatformAdmin: true,
