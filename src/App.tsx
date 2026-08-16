@@ -11,6 +11,7 @@ import {
 } from "./utils/biometricAuth";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
+import SplashScreen from "./components/common/SplashScreen";
 import Navbar from "./components/layout/Navbar";
 import Sidebar, { type AppView } from "./components/layout/Sidebar";
 import DebtCustomersView from "./components/debtCustomers/DebtCustomersView";
@@ -44,14 +45,6 @@ import type { Customer, CustomerFilter, CustomerFormData } from "./types/custome
 
 const ImportCustomersModal = lazy(() => import("./components/customers/ImportCustomersModal"));
 const CustomerActivityModal = lazy(() => import("./components/customers/CustomerActivityModal"));
-
-function FullScreenLoader() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-ink-100">
-      <Loader2 size={28} className="animate-spin text-amtel-600" />
-    </div>
-  );
-}
 
 const SuspenseModalFallback = (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50">
@@ -449,9 +442,9 @@ export default function App() {
   const { user, loading, profileLoading, profileLoadFailed, tenantId } = useAuth();
   const [biometricUnlocked, setBiometricUnlocked] = useState(false);
 
-  if (loading) return <FullScreenLoader />;
+  if (loading) return <SplashScreen />;
   if (!user) return <LoginPage />;
-  if (profileLoading) return <FullScreenLoader />;
+  if (profileLoading) return <SplashScreen />;
   if (profileLoadFailed) return <ProfileLoadError />;
   if (!tenantId) return <AccountNotSetUp />;
 

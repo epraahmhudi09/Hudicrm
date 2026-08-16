@@ -112,7 +112,7 @@ export async function registerBiometric(
   const credential = (await navigator.credentials.create({
     publicKey: {
       challenge: randomChallenge(),
-      rp: { name: "Hudi CRM", id: window.location.hostname },
+      rp: { name: "HD CRM", id: window.location.hostname },
       user: {
         id: new TextEncoder().encode(uid),
         name: email,

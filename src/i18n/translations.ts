@@ -666,7 +666,7 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppsTitle: "Download Apps",
     downloadAppsSubtitle:
       "Everything you need to run the CRM and its automation on a phone or PC.",
-    downloadAppCrmTitle: "Hudi CRM App",
+    downloadAppCrmTitle: "HD CRM App",
     downloadAppCrmDesc: "Install this CRM on your device for quick, full-screen access.",
     downloadAppCrmInstalled: "Already installed on this device.",
     installManualLabel: "How to install",
@@ -676,7 +676,7 @@ export const translations: Record<"en" | "so", Translations> = {
     installStepAndroidMenu: "Tap the ⋮ menu in the top-right corner.",
     installStepAndroidInstall: "Tap \"Install app\" (or \"Add to Home screen\"), then confirm.",
     installStepDesktopIcon: "Click the install icon (⊕) in the address bar, or open the ⋮ menu.",
-    installStepDesktopInstall: "Click \"Install Hudi CRM\", then confirm.",
+    installStepDesktopInstall: "Click \"Install HD CRM\", then confirm.",
     downloadAppFdroidTitle: "F-Droid",
     downloadAppFdroidDesc:
       "App store needed to install Termux and Termux:API below (they're not on Google Play). Install this first.",
@@ -1043,7 +1043,7 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppsTitle: "Soo Deji Apps-ka",
     downloadAppsSubtitle:
       "Dhammaan waxa aad u baahan tahay si aad u shaqaysiiso CRM-ka iyo automation-kiisa taleefan ama kombuyuutar.",
-    downloadAppCrmTitle: "Hudi CRM App",
+    downloadAppCrmTitle: "HD CRM App",
     downloadAppCrmDesc: "Ku rakib CRM-kan taleefankaaga si aad ugu geli dhaqso oo shaashad buuxa ah.",
     downloadAppCrmInstalled: "Horey ayaa loogu rakibay device-kan.",
     installManualLabel: "Sida loo rakibo",
@@ -1053,7 +1053,7 @@ export const translations: Record<"en" | "so", Translations> = {
     installStepAndroidMenu: "Taabo menu-ga ⋮ ee geeska sare ee midig.",
     installStepAndroidInstall: "Taabo \"Install app\" (ama \"Add to Home screen\"), kadibna xaqiiji.",
     installStepDesktopIcon: "Riix icon-ka install-ka (⊕) ee address bar-ka, ama fur menu-ga ⋮.",
-    installStepDesktopInstall: "Riix \"Install Hudi CRM\", kadibna xaqiiji.",
+    installStepDesktopInstall: "Riix \"Install HD CRM\", kadibna xaqiiji.",
     downloadAppFdroidTitle: "F-Droid",
     downloadAppFdroidDesc:
       "App store loo baahan yahay si aad u rakibto Termux iyo Termux:API ee hoose (kuma jiraan Google Play). Marka hore kan rakib.",

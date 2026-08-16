@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Hudi CRM',
-        short_name: 'Hudi CRM',
+        name: 'HD CRM',
+        short_name: 'HD CRM',
         description: 'Amtel CRM — manage customers, subscriptions, and loyalty status.',
         theme_color: '#dc2626',
         background_color: '#ffffff',
