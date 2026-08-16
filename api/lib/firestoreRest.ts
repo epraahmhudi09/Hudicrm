@@ -73,6 +73,18 @@ function encodeFields(data: Record<string, unknown>): Record<string, FirestoreVa
   return fields;
 }
 
+/** Reads a single document by path, or null if it doesn't exist. */
+export async function getDocument(path: string): Promise<FirestoreDoc | null> {
+  const token = await getAccessToken(["https://www.googleapis.com/auth/datastore"]);
+  const res = await fetch(`${base()}/${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Firestore REST ${res.status}: ${await res.text()}`);
+  const json = (await res.json()) as { name: string; fields?: Record<string, FirestoreValue> };
+  return decodeDocument(json);
+}
+
 /** Lists every document in a top-level collection (paginated automatically). */
 export async function listCollection(collectionPath: string): Promise<FirestoreDoc[]> {
   const results: FirestoreDoc[] = [];
@@ -129,6 +141,18 @@ export async function setDocument(path: string, data: Record<string, unknown>): 
     method: "PATCH",
     body: JSON.stringify({ fields: encodeFields(data) }),
   });
+}
+
+/** Deletes a document. No-ops (does not throw) if it doesn't exist. */
+export async function deleteDocument(path: string): Promise<void> {
+  const token = await getAccessToken(["https://www.googleapis.com/auth/datastore"]);
+  const res = await fetch(`${base()}/${path}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Firestore REST ${res.status}: ${await res.text()}`);
+  }
 }
 
 /** Creates a new document in a collection with an auto-generated ID, returning that ID. */

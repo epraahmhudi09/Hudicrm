@@ -42,6 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         await setDocument(`topups/${activity.id}`, {
+          tenantId: customer.tenantId ?? null,
           customerId: customer.id,
           customerName: String(customer.name ?? "Customer"),
           amount,

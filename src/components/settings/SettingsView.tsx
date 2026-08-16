@@ -1,5 +1,14 @@
-import { useState, type FormEvent } from "react";
-import { AlertCircle, Bell, Camera, Check, Languages, Loader2, UserCircle } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  AlertCircle,
+  Bell,
+  Camera,
+  Check,
+  Copy,
+  Languages,
+  Loader2,
+  UserCircle,
+} from "lucide-react";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -8,10 +17,12 @@ import {
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, useTenantId } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { resizeImageToDataUrl } from "../../utils/imageResize";
 import { enablePushNotifications, type PushSetupResult } from "../../utils/pushNotifications";
+import { getTenant } from "../../services/tenantService";
+import type { Tenant } from "../../types/tenant";
 
 function friendlyError(code: string): string {
   switch (code) {
@@ -37,6 +48,78 @@ function SettingsCard({ title, children }: { title: string; children: React.Reac
       <h2 className="mb-4 text-sm font-semibold text-ink-900">{title}</h2>
       {children}
     </div>
+  );
+}
+
+function CopyRow({ label, value }: { label: string; value: string }) {
+  const { t } = useLanguage();
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-medium text-ink-500">{label}</p>
+      <div className="mt-1 flex items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-lg border border-ink-200 bg-ink-100/50 px-2.5 py-1.5 text-xs text-ink-900">
+          {value}
+        </code>
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-ink-300 bg-white px-2 py-1.5 text-xs font-medium text-ink-700 transition hover:bg-ink-100"
+        >
+          {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+          {copied ? t.copied : t.copyToClipboard}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SmsAutomationCard() {
+  const { t } = useLanguage();
+  const tenantId = useTenantId();
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getTenant(tenantId)
+      .then((data) => {
+        if (!cancelled) setTenant(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId]);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+  return (
+    <SettingsCard title={t.smsAutomationTitle}>
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 size={18} className="animate-spin text-amtel-600" />
+        </div>
+      ) : !tenant ? (
+        <p className="text-sm text-ink-500">{t.couldntLoadUsers}</p>
+      ) : (
+        <div className="space-y-3">
+          <CopyRow label={t.webhookTokenLabel} value={tenant.webhookToken} />
+          <CopyRow label="sms-webhook" value={`${origin}/api/sms-webhook`} />
+          <CopyRow label="pending-sms" value={`${origin}/api/pending-sms`} />
+          <CopyRow label="mark-sms-sent" value={`${origin}/api/mark-sms-sent`} />
+        </div>
+      )}
+    </SettingsCard>
   );
 }
 
@@ -292,6 +375,8 @@ export default function SettingsView() {
           </p>
         )}
       </SettingsCard>
+
+      <SmsAutomationCard />
 
       <SettingsCard title={t.settingsLanguage}>
         <div className="flex items-center gap-3">

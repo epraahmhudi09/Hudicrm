@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 import { getCustomersRealtime } from "../../services/customerService";
 import { getOutboundSmsForCustomer } from "../../services/outboundSmsService";
 import type { Customer } from "../../types/customer";
@@ -37,9 +38,11 @@ function formatDateTime(date: Date): string {
 }
 
 function MessagePreviewModal({
+  tenantId,
   customer,
   onClose,
 }: {
+  tenantId: string;
   customer: Customer;
   onClose: () => void;
 }) {
@@ -49,7 +52,7 @@ function MessagePreviewModal({
 
   useEffect(() => {
     let cancelled = false;
-    getOutboundSmsForCustomer(customer.id)
+    getOutboundSmsForCustomer(tenantId, customer.id)
       .then((data) => {
         if (!cancelled) setMessages(data);
       })
@@ -59,7 +62,7 @@ function MessagePreviewModal({
     return () => {
       cancelled = true;
     };
-  }, [customer.id]);
+  }, [tenantId, customer.id]);
 
   return (
     <div
@@ -114,6 +117,7 @@ function MessagePreviewModal({
 
 export default function SmsRemindersView() {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -121,6 +125,7 @@ export default function SmsRemindersView() {
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
+      tenantId,
       (data) => {
         setCustomers(data);
         setLoading(false);
@@ -132,7 +137,7 @@ export default function SmsRemindersView() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const reminded = useMemo(() => {
     return customers
@@ -235,7 +240,11 @@ export default function SmsRemindersView() {
       )}
 
       {viewingCustomer && (
-        <MessagePreviewModal customer={viewingCustomer} onClose={() => setViewingCustomer(null)} />
+        <MessagePreviewModal
+          tenantId={tenantId}
+          customer={viewingCustomer}
+          onClose={() => setViewingCustomer(null)}
+        />
       )}
     </div>
   );

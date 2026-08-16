@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  where,
   writeBatch,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -40,9 +41,14 @@ function toFirestoreCustomerData(data: CustomerFormData) {
   };
 }
 
-export async function addCustomer(data: CustomerFormData, createdAt?: Date): Promise<string> {
+export async function addCustomer(
+  tenantId: string,
+  data: CustomerFormData,
+  createdAt?: Date
+): Promise<string> {
   const docRef = await addDoc(customersRef, {
     ...toFirestoreCustomerData(data),
+    tenantId,
     createdAt: createdAt ? Timestamp.fromDate(createdAt) : serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -54,6 +60,7 @@ export interface BulkImportResult {
 }
 
 export async function bulkAddCustomers(
+  tenantId: string,
   rows: Array<{ data: CustomerFormData; createdAt?: Date | null }>
 ): Promise<BulkImportResult> {
   let successCount = 0;
@@ -66,6 +73,7 @@ export async function bulkAddCustomers(
       const newDocRef = doc(customersRef);
       batch.set(newDocRef, {
         ...toFirestoreCustomerData(row.data),
+        tenantId,
         createdAt: row.createdAt ? Timestamp.fromDate(row.createdAt) : serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -79,10 +87,11 @@ export async function bulkAddCustomers(
 }
 
 export function getCustomersRealtime(
+  tenantId: string,
   onData: (customers: Customer[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
-  const q = query(customersRef, orderBy("createdAt", "desc"));
+  const q = query(customersRef, where("tenantId", "==", tenantId));
 
   return onSnapshot(
     q,
@@ -93,6 +102,10 @@ export function getCustomersRealtime(
         // "estimate" fills it with the client's local clock so the UI doesn't flash "—".
         ...docSnap.data({ serverTimestamps: "estimate" }),
       })) as Customer[];
+      // Sorted client-side rather than via orderBy() in the query — an
+      // equality filter (tenantId) plus orderBy on a different field
+      // (createdAt) needs a composite index, which isn't provisionable here.
+      customers.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
       onData(customers);
     },
     (error) => {

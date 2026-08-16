@@ -8,6 +8,7 @@ import {
   Package,
   PhoneCall,
   Settings,
+  ShieldCheck,
   Users,
   Wallet,
   X,
@@ -26,6 +27,7 @@ export type AppView =
   | "smsReminders"
   | "escalations"
   | "downloadApps"
+  | "users"
   | "settings";
 
 interface SidebarProps {
@@ -33,9 +35,16 @@ interface SidebarProps {
   onClose: () => void;
   view: AppView;
   onNavigate: (view: AppView) => void;
+  isPlatformAdmin: boolean;
 }
 
-export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProps) {
+export default function Sidebar({
+  open,
+  onClose,
+  view,
+  onNavigate,
+  isPlatformAdmin,
+}: SidebarProps) {
   const { t } = useLanguage();
   const { canInstall, promptInstall } = useInstallPrompt();
 
@@ -49,6 +58,9 @@ export default function Sidebar({ open, onClose, view, onNavigate }: SidebarProp
     { key: "bundles", label: t.navBundles, icon: <Package size={18} /> },
     { key: "analytics", label: t.navAnalytics, icon: <BarChart3 size={18} /> },
     { key: "downloadApps", label: t.navDownloadApps, icon: <Download size={18} /> },
+    ...(isPlatformAdmin
+      ? [{ key: "users" as const, label: t.navUsers, icon: <ShieldCheck size={18} /> }]
+      : []),
   ];
 
   const settingsItem: { key: AppView; label: string; icon: ReactNode } = {

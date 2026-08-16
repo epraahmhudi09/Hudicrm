@@ -8,6 +8,7 @@ import { formatDuration } from "../bundles/BundleTable";
 import { PHONE_PATTERN } from "../../utils/customerValidation";
 import { normalizePhone } from "../../utils/phone";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 
 interface CustomerFormProps {
   customer: Customer | null;
@@ -36,6 +37,7 @@ export default function CustomerForm({
   onClose,
 }: CustomerFormProps) {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const isEdit = Boolean(customer);
   const [form, setForm] = useState<CustomerFormData>(EMPTY_CUSTOMER_FORM);
   const [createdDate, setCreatedDate] = useState<string>(todayInputValue());
@@ -45,9 +47,9 @@ export default function CustomerForm({
   const [bundles, setBundles] = useState<Bundle[]>([]);
 
   useEffect(() => {
-    const unsubscribe = getBundlesRealtime(setBundles);
+    const unsubscribe = getBundlesRealtime(tenantId, setBundles);
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     if (customer) {

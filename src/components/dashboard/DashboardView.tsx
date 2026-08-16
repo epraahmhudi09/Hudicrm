@@ -19,6 +19,7 @@ import {
   Tooltip,
 } from "recharts";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 import { getCustomersRealtime } from "../../services/customerService";
 import { getDebtCustomersRealtime } from "../../services/debtCustomerService";
 import { getRecentTopups } from "../../services/topupService";
@@ -68,6 +69,7 @@ function formatDateTime(date: Date): string {
 
 export default function DashboardView() {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [debtCustomers, setDebtCustomers] = useState<DebtCustomer[]>([]);
   const [recentTopups, setRecentTopups] = useState<Topup[]>([]);
@@ -76,6 +78,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
+      tenantId,
       (data) => {
         setCustomers(data);
         setLoading(false);
@@ -87,18 +90,18 @@ export default function DashboardView() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
-    const unsubscribe = getDebtCustomersRealtime(setDebtCustomers);
+    const unsubscribe = getDebtCustomersRealtime(tenantId, setDebtCustomers);
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
-    getRecentTopups(8)
+    getRecentTopups(tenantId, 8)
       .then(setRecentTopups)
       .catch(() => setRecentTopups([]));
-  }, []);
+  }, [tenantId]);
 
   const stats = useMemo(() => {
     const totalCustomers = customers.length;

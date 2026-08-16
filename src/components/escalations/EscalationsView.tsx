@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Loader2, Phone, PhoneCall } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 import { getCustomersRealtime } from "../../services/customerService";
 import type { Customer } from "../../types/customer";
 import { telHref } from "../../utils/phone";
@@ -18,12 +19,14 @@ function formatDate(date: Date): string {
 
 export default function EscalationsView() {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
+      tenantId,
       (data) => {
         setCustomers(data);
         setLoading(false);
@@ -35,7 +38,7 @@ export default function EscalationsView() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const escalated = useMemo(() => {
     return customers

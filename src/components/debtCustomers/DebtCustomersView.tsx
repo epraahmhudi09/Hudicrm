@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, Plus, Search, Wallet } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 import {
   addDebtCustomer,
   deleteDebtCustomer,
@@ -14,6 +15,7 @@ import ConfirmDialog from "../common/ConfirmDialog";
 
 export default function DebtCustomersView() {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [debtCustomers, setDebtCustomers] = useState<DebtCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export default function DebtCustomersView() {
 
   useEffect(() => {
     const unsubscribe = getDebtCustomersRealtime(
+      tenantId,
       (data) => {
         setDebtCustomers(data);
         setLoading(false);
@@ -37,7 +40,7 @@ export default function DebtCustomersView() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -69,7 +72,7 @@ export default function DebtCustomersView() {
     if (editingDebtCustomer) {
       await updateDebtCustomer(editingDebtCustomer.id, data);
     } else {
-      await addDebtCustomer(data);
+      await addDebtCustomer(tenantId, data);
     }
     setFormOpen(false);
     setEditingDebtCustomer(null);

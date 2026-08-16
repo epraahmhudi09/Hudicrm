@@ -4,10 +4,10 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  where,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -25,9 +25,13 @@ function toFirestoreDebtCustomerData(data: DebtCustomerFormData) {
   };
 }
 
-export async function addDebtCustomer(data: DebtCustomerFormData): Promise<string> {
+export async function addDebtCustomer(
+  tenantId: string,
+  data: DebtCustomerFormData
+): Promise<string> {
   const docRef = await addDoc(debtCustomersRef, {
     ...toFirestoreDebtCustomerData(data),
+    tenantId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -35,10 +39,11 @@ export async function addDebtCustomer(data: DebtCustomerFormData): Promise<strin
 }
 
 export function getDebtCustomersRealtime(
+  tenantId: string,
   onData: (debtCustomers: DebtCustomer[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
-  const q = query(debtCustomersRef, orderBy("createdAt", "desc"));
+  const q = query(debtCustomersRef, where("tenantId", "==", tenantId));
 
   return onSnapshot(
     q,
@@ -49,6 +54,9 @@ export function getDebtCustomersRealtime(
         // "estimate" fills it with the client's local clock so the UI doesn't flash "—".
         ...docSnap.data({ serverTimestamps: "estimate" }),
       })) as DebtCustomer[];
+      debtCustomers.sort(
+        (a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0)
+      );
       onData(debtCustomers);
     },
     (error) => {

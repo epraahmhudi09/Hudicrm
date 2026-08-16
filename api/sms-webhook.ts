@@ -12,11 +12,12 @@ interface RegisteredBundle extends BundleTier {
   id: string;
 }
 
-/** Reads staff-managed bundle tiers from Firestore, skipping any malformed docs. */
-async function loadBundles(): Promise<RegisteredBundle[]> {
+/** Reads a tenant's staff-managed bundle tiers, skipping any malformed docs. */
+async function loadBundles(tenantId: string): Promise<RegisteredBundle[]> {
   const docs = await listCollection("bundles");
   const bundles: RegisteredBundle[] = [];
   for (const doc of docs) {
+    if (doc.tenantId !== tenantId) continue;
     const amount = Number(doc.amount);
     const durationValue = Number(doc.durationValue);
     if (Number.isFinite(amount) && Number.isFinite(durationValue) && isDurationUnit(doc.durationUnit)) {
@@ -24,6 +25,18 @@ async function loadBundles(): Promise<RegisteredBundle[]> {
     }
   }
   return bundles;
+}
+
+interface Tenant {
+  id: string;
+  webhookToken: string;
+}
+
+/** Resolves a per-tenant webhook token (from the tenants collection) to its tenantId, or null if unrecognized/inactive. */
+async function resolveTenant(token: string): Promise<Tenant | null> {
+  const tenants = await listCollection("tenants");
+  const match = tenants.find((t) => t.webhookToken === token && t.active !== false);
+  return match ? { id: match.id, webhookToken: String(match.webhookToken) } : null;
 }
 
 function normalizePhone(phone: string): string {
@@ -53,7 +66,7 @@ function extractSmsText(body: unknown): string | null {
  *
  * Configure the forwarding app to POST JSON like {"message": "<sms text>"}
  * (or form field "message"/"body"/"text") to:
- *   https://<your-vercel-domain>/api/sms-webhook?token=<SMS_WEBHOOK_SECRET>
+ *   https://<your-vercel-domain>/api/sms-webhook?token=<tenant's webhookToken>
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -62,11 +75,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const expectedToken = process.env.SMS_WEBHOOK_SECRET;
     const providedToken =
       (req.query.token as string | undefined) ?? (req.headers["x-webhook-token"] as string | undefined);
 
-    if (!expectedToken || providedToken !== expectedToken) {
+    const tenant = providedToken ? await resolveTenant(providedToken) : null;
+    if (!tenant) {
       res.status(401).json({ ok: false, error: "unauthorized" });
       return;
     }
@@ -84,7 +97,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const normalizedTarget = normalizePhone(transaction.phone);
-    const [customers, bundles] = await Promise.all([listCollection("customers"), loadBundles()]);
+    const [allCustomers, bundles] = await Promise.all([
+      listCollection("customers"),
+      loadBundles(tenant.id),
+    ]);
+    const customers = allCustomers.filter((c) => c.tenantId === tenant.id);
     const match = customers.find(
       (c) =>
         normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
@@ -133,6 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // on createdAt — same deterministic ID as the activity doc below, so a
     // retried/duplicated forward overwrites instead of double-counting.
     await setDocument(`topups/evc-${transaction.transactionId}`, {
+      tenantId: tenant.id,
       customerId: match.id,
       customerName: String(match.name ?? "Customer"),
       amount: transaction.amount,

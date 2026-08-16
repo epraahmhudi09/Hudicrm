@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 import { getCustomersRealtime } from "../../services/customerService";
 import { getTopupsInRange } from "../../services/topupService";
 import type { Customer } from "../../types/customer";
@@ -84,6 +85,7 @@ function RankedList({ rows, emptyText }: { rows: RankedEntry[]; emptyText: strin
 
 export default function AnalyticsView() {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -95,6 +97,7 @@ export default function AnalyticsView() {
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
+      tenantId,
       (data) => {
         setCustomers(data);
         setLoading(false);
@@ -106,7 +109,7 @@ export default function AnalyticsView() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     if (period === "all") {
@@ -117,7 +120,7 @@ export default function AnalyticsView() {
     let cancelled = false;
     setLoadingRange(true);
     setRangeError(null);
-    getTopupsInRange(periodStart(period), new Date())
+    getTopupsInRange(tenantId, periodStart(period), new Date())
       .then((data) => {
         if (!cancelled) setRangedTopups(data);
       })
@@ -130,7 +133,7 @@ export default function AnalyticsView() {
     return () => {
       cancelled = true;
     };
-  }, [period]);
+  }, [period, tenantId]);
 
   const ranked = useMemo(() => {
     let entries: RankedEntry[];

@@ -29,6 +29,7 @@ export interface Translations {
   signedInAs: string;
   editProfile: string;
   signOut: string;
+  accountNotSetUp: string;
 
   editProfileTitle: string;
   uploading: string;
@@ -157,6 +158,7 @@ export interface Translations {
   activityCalled: (phone: string) => string;
 
   notifTitle: string;
+  smsAutomationTitle: string;
   notifEnable: string;
   notifEnabled: string;
   notifDenied: string;
@@ -291,6 +293,39 @@ export interface Translations {
   downloadAppCronJobTitle: string;
   downloadAppCronJobDesc: string;
   downloadOpen: string;
+
+  navUsers: string;
+  usersTitle: string;
+  usersSubtitle: string;
+  addUser: string;
+  colBusinessName: string;
+  colOwnerName: string;
+  colEmail: string;
+  colCustomers: string;
+  colJoined: string;
+  statusActive: string;
+  statusDisabled: string;
+  actionDisable: string;
+  actionEnable: string;
+  actionDeleteUser: string;
+  fieldOwnerName: string;
+  fieldBusinessName: string;
+  fieldEmail: string;
+  fieldPassword: string;
+  fieldSupportPhone: string;
+  fieldSupportPhoneBackup: string;
+  userCreatedTitle: string;
+  userCreatedSubtitle: string;
+  webhookTokenLabel: string;
+  webhookUrlsLabel: string;
+  copyToClipboard: string;
+  copied: string;
+  usersEmptyTitle: string;
+  usersEmptySubtitle: string;
+  deleteUserTitle: string;
+  deleteUserMessage: (name: string) => string;
+  couldntLoadUsers: string;
+  userCreateFailed: string;
 }
 
 export const translations: Record<"en" | "so", Translations> = {
@@ -327,6 +362,8 @@ export const translations: Record<"en" | "so", Translations> = {
     signedInAs: "Signed in as",
     editProfile: "Edit Profile",
     signOut: "Sign out",
+    accountNotSetUp:
+      "Your account isn't fully set up yet. Please contact the person who created your login.",
 
     editProfileTitle: "Edit Profile",
     uploading: "Uploading...",
@@ -458,6 +495,7 @@ export const translations: Record<"en" | "so", Translations> = {
     activityCalled: (phone) => `Called ${phone}.`,
 
     notifTitle: "Push Notifications",
+    smsAutomationTitle: "SMS Automation",
     notifEnable: "Enable Notifications",
     notifEnabled: "Notifications enabled on this device",
     notifDenied:
@@ -600,6 +638,41 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppCronJobTitle: "Cron-job.org",
     downloadAppCronJobDesc: "Free scheduler that triggers the 24h/48h reminder checks automatically.",
     downloadOpen: "Open",
+
+    navUsers: "Users",
+    usersTitle: "Users",
+    usersSubtitle: "Create and manage logins for other businesses using this CRM.",
+    addUser: "Add User",
+    colBusinessName: "Business",
+    colOwnerName: "Owner",
+    colEmail: "Email",
+    colCustomers: "Customers",
+    colJoined: "Joined",
+    statusActive: "Active",
+    statusDisabled: "Disabled",
+    actionDisable: "Disable",
+    actionEnable: "Enable",
+    actionDeleteUser: "Delete",
+    fieldOwnerName: "Owner Name",
+    fieldBusinessName: "Business Name",
+    fieldEmail: "Email",
+    fieldPassword: "Password",
+    fieldSupportPhone: "Support Phone",
+    fieldSupportPhoneBackup: "Support Phone (Backup)",
+    userCreatedTitle: "Account created",
+    userCreatedSubtitle:
+      "Share these with them so they can set up their own SMS automation (Termux + cron-job.org).",
+    webhookTokenLabel: "Webhook token",
+    webhookUrlsLabel: "Endpoint URLs",
+    copyToClipboard: "Copy",
+    copied: "Copied",
+    usersEmptyTitle: "No users yet",
+    usersEmptySubtitle: "Add a user to give another business its own login and isolated data.",
+    deleteUserTitle: "Delete this user?",
+    deleteUserMessage: (name) =>
+      `This permanently deletes ${name}'s login and their business's data. This can't be undone.`,
+    couldntLoadUsers: "Couldn't load users.",
+    userCreateFailed: "Couldn't create that user. Please try again.",
   },
   so: {
     loginHeroTitle: "Ka maamul dhammaan xiriirka macaamiisha meel keliya.",
@@ -635,6 +708,8 @@ export const translations: Record<"en" | "so", Translations> = {
     signedInAs: "Waxaad ku gashantahay",
     editProfile: "Wax ka beddel Profile-ka",
     signOut: "Ka bax",
+    accountNotSetUp:
+      "Akoonkaaga weli si buuxda looma dejin. Fadlan la xiriir qofka ku sameeyay login-kaaga.",
 
     editProfileTitle: "Wax ka beddel Profile-ka",
     uploading: "Waa la soo gelinayaa...",
@@ -767,6 +842,7 @@ export const translations: Record<"en" | "so", Translations> = {
     activityCalled: (phone) => `Waxaa la wacay ${phone}.`,
 
     notifTitle: "Ogeysiisyada (Notifications)",
+    smsAutomationTitle: "SMS Automation",
     notifEnable: "Shid Ogeysiisyada",
     notifEnabled: "Ogeysiisyada waa la shiday device-kan",
     notifDenied:
@@ -912,6 +988,41 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppCronJobTitle: "Cron-job.org",
     downloadAppCronJobDesc: "Scheduler bilaash ah oo si toos ah u kiciya hubinta xasuusinta 24h/48h.",
     downloadOpen: "Fur",
+
+    navUsers: "Isticmaalayaasha",
+    usersTitle: "Isticmaalayaasha",
+    usersSubtitle: "Samee oo maamul login-ka ganacsiyada kale ee isticmaala CRM-kan.",
+    addUser: "Ku Dar Isticmaale",
+    colBusinessName: "Ganacsiga",
+    colOwnerName: "Milkiilaha",
+    colEmail: "Email-ka",
+    colCustomers: "Macaamiisha",
+    colJoined: "Ku Biiray",
+    statusActive: "Firfircoon",
+    statusDisabled: "La Joojiyay",
+    actionDisable: "Joojii",
+    actionEnable: "Dib u Shaqaysii",
+    actionDeleteUser: "Tirtir",
+    fieldOwnerName: "Magaca Milkiilaha",
+    fieldBusinessName: "Magaca Ganacsiga",
+    fieldEmail: "Email-ka",
+    fieldPassword: "Password-ka",
+    fieldSupportPhone: "Telefoonka Taageerada",
+    fieldSupportPhoneBackup: "Telefoonka Taageerada (Labaad)",
+    userCreatedTitle: "Akoonka waa la abuuray",
+    userCreatedSubtitle:
+      "La wadaag kuwan si uu u qabsado automation-kiisa SMS (Termux + cron-job.org).",
+    webhookTokenLabel: "Webhook token-ka",
+    webhookUrlsLabel: "URL-yada Endpoint-ka",
+    copyToClipboard: "Koobi",
+    copied: "Waa la koobiyay",
+    usersEmptyTitle: "Weli isticmaale lama darin",
+    usersEmptySubtitle: "Ku dar isticmaale si aad ganacsi kale u siiso login gaarkiisa iyo xog gooni ah.",
+    deleteUserTitle: "Ma tirtirtaa isticmaalahan?",
+    deleteUserMessage: (name) =>
+      `Tani si joogto ah ayay u tirtiraysaa login-ka ${name} iyo xogta ganacsigiisa. Lama soo celin karo.`,
+    couldntLoadUsers: "Isticmaalayaasha lama soo geli karin.",
+    userCreateFailed: "Isticmaalahan lama abuuri karin. Fadlan mar kale isku day.",
   },
 };
 

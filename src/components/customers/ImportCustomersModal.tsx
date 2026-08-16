@@ -16,6 +16,7 @@ import type { Bundle } from "../../types/bundle";
 import type { Customer } from "../../types/customer";
 import StatusBadge from "./StatusBadge";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 
 interface ImportCustomersModalProps {
   existingCustomers: Customer[];
@@ -29,6 +30,7 @@ export default function ImportCustomersModal({
   onClose,
 }: ImportCustomersModalProps) {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [stage, setStage] = useState<Stage>("pick");
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<ValidatedCustomerRow[]>([]);
@@ -37,9 +39,9 @@ export default function ImportCustomersModal({
   const [bundles, setBundles] = useState<Bundle[]>([]);
 
   useEffect(() => {
-    const unsubscribe = getBundlesRealtime(setBundles);
+    const unsubscribe = getBundlesRealtime(tenantId, setBundles);
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const validRows = rows.filter((r) => r.errors.length === 0);
   const invalidCount = rows.length - validRows.length;
@@ -72,6 +74,7 @@ export default function ImportCustomersModal({
     setStage("importing");
     try {
       const result = await bulkAddCustomers(
+        tenantId,
         validRows.map((r) => ({ data: r.data, createdAt: r.createdAt }))
       );
       setImportedCount(result.successCount);

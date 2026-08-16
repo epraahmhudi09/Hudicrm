@@ -4,10 +4,10 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  where,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -25,9 +25,10 @@ function toFirestoreBundleData(data: BundleFormData) {
   };
 }
 
-export async function addBundle(data: BundleFormData): Promise<string> {
+export async function addBundle(tenantId: string, data: BundleFormData): Promise<string> {
   const docRef = await addDoc(bundlesRef, {
     ...toFirestoreBundleData(data),
+    tenantId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -35,10 +36,11 @@ export async function addBundle(data: BundleFormData): Promise<string> {
 }
 
 export function getBundlesRealtime(
+  tenantId: string,
   onData: (bundles: Bundle[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
-  const q = query(bundlesRef, orderBy("amount", "asc"));
+  const q = query(bundlesRef, where("tenantId", "==", tenantId));
 
   return onSnapshot(
     q,
@@ -47,6 +49,7 @@ export function getBundlesRealtime(
         id: docSnap.id,
         ...docSnap.data({ serverTimestamps: "estimate" }),
       })) as Bundle[];
+      bundles.sort((a, b) => a.amount - b.amount);
       onData(bundles);
     },
     (error) => {

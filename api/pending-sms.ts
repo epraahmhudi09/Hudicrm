@@ -2,29 +2,34 @@ import { listCollection } from "./lib/firestoreRest.js";
 import type { VercelRequest, VercelResponse } from "./lib/types.js";
 
 /**
- * Polled by the Termux phone's sender loop to find customer reminder SMS
- * that check-expiry has queued but nothing has sent yet. Returns the raw
- * queue rather than mutating anything — the Termux script marks each one
- * sent (via /api/mark-sms-sent) only after termux-sms-send actually
- * succeeds, so a crash mid-send just gets retried next poll instead of
- * silently dropping the reminder.
+ * Polled by a tenant's Termux phone to find customer reminder SMS that
+ * check-expiry has queued but nothing has sent yet, scoped to whichever
+ * tenant owns the given webhook token. Returns the raw queue rather than
+ * mutating anything — the Termux script marks each one sent (via
+ * /api/mark-sms-sent) only after termux-sms-send actually succeeds, so a
+ * crash mid-send just gets retried next poll instead of silently dropping
+ * the reminder.
  *
- *   https://<your-vercel-domain>/api/pending-sms?token=<SMS_WEBHOOK_SECRET>
+ *   https://<your-vercel-domain>/api/pending-sms?token=<tenant's webhookToken>
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const expectedToken = process.env.SMS_WEBHOOK_SECRET;
     const providedToken =
       (req.query.token as string | undefined) ?? (req.headers["x-webhook-token"] as string | undefined);
 
-    if (!expectedToken || providedToken !== expectedToken) {
+    const tenants = await listCollection("tenants");
+    const tenant = providedToken
+      ? tenants.find((t) => t.webhookToken === providedToken && t.active !== false)
+      : undefined;
+
+    if (!tenant) {
       res.status(401).json({ ok: false, error: "unauthorized" });
       return;
     }
 
     const docs = await listCollection("outboundSms");
     const pending = docs
-      .filter((doc) => !doc.sentAt)
+      .filter((doc) => doc.tenantId === tenant.id && !doc.sentAt)
       .map((doc) => ({
         id: doc.id,
         phone: String(doc.phone ?? ""),

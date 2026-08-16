@@ -11,10 +11,19 @@ const OUTBOUND_SMS_COLLECTION = "outboundSms";
  * single-field index.
  */
 export async function getOutboundSmsForCustomer(
+  tenantId: string,
   customerId: string,
   count = 5
 ): Promise<OutboundSms[]> {
-  const q = query(collection(db, OUTBOUND_SMS_COLLECTION), where("customerId", "==", customerId));
+  // Both filters are required: tenantId because Firestore's security rules
+  // for list queries must be able to prove every match satisfies them from
+  // the query's own filters (not by testing each returned document), and
+  // customerId is the actual selectivity we want.
+  const q = query(
+    collection(db, OUTBOUND_SMS_COLLECTION),
+    where("tenantId", "==", tenantId),
+    where("customerId", "==", customerId)
+  );
   const snapshot = await getDocs(q);
   const results = snapshot.docs.map(
     (docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as OutboundSms

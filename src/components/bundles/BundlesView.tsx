@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Package, Plus, Sparkles } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTenantId } from "../../context/AuthContext";
 import {
   addBundle,
   deleteBundle,
@@ -38,6 +39,7 @@ const TANAAD_BULAAL_CATALOG: Array<{
 
 export default function BundlesView() {
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -51,6 +53,7 @@ export default function BundlesView() {
 
   useEffect(() => {
     const unsubscribe = getBundlesRealtime(
+      tenantId,
       (data) => {
         setBundles(data);
         setLoading(false);
@@ -62,7 +65,7 @@ export default function BundlesView() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   function openAddForm() {
     setEditingBundle(null);
@@ -78,7 +81,7 @@ export default function BundlesView() {
     if (editingBundle) {
       await updateBundle(editingBundle.id, data);
     } else {
-      await addBundle(data);
+      await addBundle(tenantId, data);
     }
     setFormOpen(false);
     setEditingBundle(null);
@@ -99,7 +102,7 @@ export default function BundlesView() {
     setSeeding(true);
     try {
       for (const tier of DEFAULT_BUNDLE_TIERS) {
-        await addBundle({
+        await addBundle(tenantId, {
           name: "",
           amount: String(tier.amount),
           durationValue: String(tier.durationValue),
@@ -117,7 +120,7 @@ export default function BundlesView() {
       const existing = new Set(bundles.map((b) => `${b.name}|${b.amount}`));
       for (const entry of TANAAD_BULAAL_CATALOG) {
         if (existing.has(`${entry.name}|${entry.amount}`)) continue;
-        await addBundle({
+        await addBundle(tenantId, {
           name: entry.name,
           amount: String(entry.amount),
           durationValue: String(entry.durationValue),

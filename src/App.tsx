@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle, Bell, X } from "lucide-react";
-import { useAuth } from "./context/AuthContext";
+import { useAuth, useTenantId } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
@@ -12,6 +12,7 @@ import AnalyticsView from "./components/analytics/AnalyticsView";
 import SmsRemindersView from "./components/smsReminders/SmsRemindersView";
 import EscalationsView from "./components/escalations/EscalationsView";
 import DownloadAppsView from "./components/downloadApps/DownloadAppsView";
+import UsersView from "./components/admin/UsersView";
 import DashboardView from "./components/dashboard/DashboardView";
 import SettingsView from "./components/settings/SettingsView";
 import StatsOverview from "./components/dashboard/StatsOverview";
@@ -52,6 +53,8 @@ const SuspenseModalFallback = (
 
 function Dashboard() {
   const { t } = useLanguage();
+  const { isPlatformAdmin } = useAuth();
+  const tenantId = useTenantId();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [view, setView] = useState<AppView>("dashboard");
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -87,6 +90,7 @@ function Dashboard() {
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
+      tenantId,
       (data) => {
         setCustomers(data);
         setLoadingCustomers(false);
@@ -98,7 +102,7 @@ function Dashboard() {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const filteredCustomers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -151,7 +155,7 @@ function Dashboard() {
       await updateCustomer(editingCustomer.id, data);
       await logActivity(editingCustomer.id, "updated", t.activityUpdated);
     } else {
-      const newId = await addCustomer(data, createdAt);
+      const newId = await addCustomer(tenantId, data, createdAt);
       await logActivity(newId, "created", t.activityCreated);
     }
     setFormOpen(false);
@@ -206,6 +210,7 @@ function Dashboard() {
         onClose={() => setSidebarOpen(false)}
         view={view}
         onNavigate={setView}
+        isPlatformAdmin={isPlatformAdmin}
       />
 
       {toast && (
@@ -283,6 +288,8 @@ function Dashboard() {
           <BundlesView />
         ) : view === "downloadApps" ? (
           <DownloadAppsView />
+        ) : view === "users" && isPlatformAdmin ? (
+          <UsersView />
         ) : (
           <AnalyticsView />
         )}
@@ -332,11 +339,30 @@ function Dashboard() {
   );
 }
 
+function AccountNotSetUp() {
+  const { t } = useLanguage();
+  const { logout } = useAuth();
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-ink-100 px-4 text-center">
+      <AlertTriangle size={28} className="text-amtel-600" />
+      <p className="max-w-sm font-medium text-ink-900">{t.accountNotSetUp}</p>
+      <button
+        onClick={() => void logout()}
+        className="rounded-lg bg-amtel-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700"
+      >
+        {t.signOut}
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, profileLoading, tenantId } = useAuth();
 
   if (loading) return <FullScreenLoader />;
   if (!user) return <LoginPage />;
+  if (profileLoading) return <FullScreenLoader />;
+  if (!tenantId) return <AccountNotSetUp />;
 
   return <Dashboard />;
 }

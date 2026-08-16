@@ -7,6 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Every rule below that scopes data by tenant reads the caller's own
+    // users/{uid} doc once. Costs an extra read per rule evaluation, which
+    // is fine at this app's scale, and fails closed (denies) if that doc
+    // doesn't exist yet — matching the app's own "account not fully set up"
+    // state for a user whose profile hasn't been provisioned.
+    function callerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserTenantId() {
+      return isSignedIn() ? callerProfile().tenantId : null;
+    }
+
+    function isPlatformAdmin() {
+      return isSignedIn() && callerProfile().isPlatformAdmin == true;
+    }
+
     function isNonEmptyString(value) {
       return value is string && value.size() > 0 && value.size() <= 200;
     }
@@ -51,9 +68,10 @@ service cloud.firestore {
 
     function hasValidCustomerSchema(data) {
       return data.keys().hasOnly(
-          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
+          ['tenantId', 'name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
            'lastExpiryAlertSentFor', 'last48hEscalationSentFor', 'totalTopupAmount', 'bundleId',
            'createdAt', 'updatedAt']) &&
+        data.tenantId == getUserTenantId() &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -73,9 +91,10 @@ service cloud.firestore {
     // document here, not just changed fields.
     function hasValidCustomerUpdate(data) {
       return data.keys().hasOnly(
-          ['name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
+          ['tenantId', 'name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
            'lastExpiryAlertSentFor', 'last48hEscalationSentFor', 'totalTopupAmount', 'bundleId',
            'createdAt', 'updatedAt']) &&
+        data.tenantId == resource.data.tenantId &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
         isOptionalString(data.backupPhone) &&
@@ -91,13 +110,15 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
       allow create: if isSignedIn() && hasValidCustomerSchema(request.resource.data);
-      allow update: if isSignedIn() && hasValidCustomerUpdate(request.resource.data);
-      allow delete: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.tenantId == getUserTenantId() &&
+        hasValidCustomerUpdate(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.tenantId == getUserTenantId();
 
       // Append-only activity timeline for this customer. No update/delete —
-      // it's a log, not editable state.
+      // it's a log, not editable state. Scoped via the parent customer's
+      // tenantId rather than duplicating tenantId onto every activity doc.
       function isValidActivityType(value) {
         return value is string &&
           (value == 'created' || value == 'status_change' || value == 'call' ||
@@ -112,34 +133,65 @@ service cloud.firestore {
           data.createdAt == request.time;
       }
 
+      function isOwnCustomer() {
+        return get(/databases/$(database)/documents/customers/$(customerId)).data.tenantId == getUserTenantId();
+      }
+
       match /activities/{activityId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn() && hasValidActivity(request.resource.data);
+        allow read: if isSignedIn() && isOwnCustomer();
+        allow create: if isSignedIn() && isOwnCustomer() && hasValidActivity(request.resource.data);
         allow update, delete: if false;
       }
     }
 
-    // Per-user profile doc (avatar image + push notification token). Capped
-    // well under Firestore's 1MiB document limit so a user can't stuff
-    // arbitrarily large payloads in.
-    function isValidUserProfile(data) {
-      return data.keys().hasOnly(['photoDataUrl', 'fcmToken', 'updatedAt']) &&
+    // Per-user profile doc (avatar image, push notification token, and —
+    // since the multi-tenant rollout — which tenant this login belongs to).
+    // tenantId/isPlatformAdmin/email/disabled are only ever set by admin
+    // API endpoints (service account, bypasses these rules); a client can
+    // never create its own doc or change those four fields, only touch
+    // photoDataUrl/fcmToken on an already-provisioned profile — otherwise a
+    // signed-in user could grant themselves platform admin or hop tenants
+    // by writing straight to Firestore from devtools.
+    function isValidUserProfileUpdate(data) {
+      return data.keys().hasOnly(
+          ['photoDataUrl', 'fcmToken', 'tenantId', 'isPlatformAdmin', 'email', 'disabled', 'updatedAt']) &&
         (!('photoDataUrl' in data) || (data.photoDataUrl is string && data.photoDataUrl.size() <= 400000)) &&
         (!('fcmToken' in data) || data.fcmToken is string) &&
+        (('tenantId' in data) == ('tenantId' in resource.data)) &&
+        (!('tenantId' in data) || data.tenantId == resource.data.tenantId) &&
+        (('isPlatformAdmin' in data) == ('isPlatformAdmin' in resource.data)) &&
+        (!('isPlatformAdmin' in data) || data.isPlatformAdmin == resource.data.isPlatformAdmin) &&
+        (('email' in data) == ('email' in resource.data)) &&
+        (!('email' in data) || data.email == resource.data.email) &&
+        (('disabled' in data) == ('disabled' in resource.data)) &&
+        (!('disabled' in data) || data.disabled == resource.data.disabled) &&
         data.updatedAt == request.time;
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      allow write: if isSignedIn() && request.auth.uid == userId &&
-        isValidUserProfile(request.resource.data);
+      allow get: if isSignedIn() && (request.auth.uid == userId || isPlatformAdmin());
+      allow list: if isPlatformAdmin();
+      allow create: if false;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUserProfileUpdate(request.resource.data);
+      allow delete: if false;
+    }
+
+    // One doc per business. webhookToken gates that tenant's SMS automation
+    // endpoints (checked server-side, not by these rules). Only platform
+    // admins and that tenant's own signed-in users can read it (the tenant
+    // reads their own token/URLs from their Settings page); only admin API
+    // endpoints (service account) write it.
+    match /tenants/{tenantId} {
+      allow read: if isPlatformAdmin() || (isSignedIn() && getUserTenantId() == tenantId);
+      allow write: if false;
     }
 
     // Customers who owe the business money (tracked separately from the
     // regular customers collection — no status/bundle fields, just a
     // running amount owed).
     function hasValidDebtCustomerSchema(data) {
-      return data.keys().hasOnly(['name', 'phone', 'backupPhone', 'amount', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['tenantId', 'name', 'phone', 'backupPhone', 'amount', 'createdAt', 'updatedAt']) &&
+        data.tenantId == getUserTenantId() &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.phone) &&
         isOptionalString(data.backupPhone) &&
@@ -149,7 +201,8 @@ service cloud.firestore {
     }
 
     function hasValidDebtCustomerUpdate(data) {
-      return data.keys().hasOnly(['name', 'phone', 'backupPhone', 'amount', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['tenantId', 'name', 'phone', 'backupPhone', 'amount', 'createdAt', 'updatedAt']) &&
+        data.tenantId == resource.data.tenantId &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.phone) &&
         isOptionalString(data.backupPhone) &&
@@ -159,10 +212,11 @@ service cloud.firestore {
     }
 
     match /debtCustomers/{debtCustomerId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
       allow create: if isSignedIn() && hasValidDebtCustomerSchema(request.resource.data);
-      allow update: if isSignedIn() && hasValidDebtCustomerUpdate(request.resource.data);
-      allow delete: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.tenantId == getUserTenantId() &&
+        hasValidDebtCustomerUpdate(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.tenantId == getUserTenantId();
     }
 
     // Staff-managed pricing tiers ($ amount -> how long the bundle lasts).
@@ -173,7 +227,8 @@ service cloud.firestore {
     }
 
     function hasValidBundleSchema(data) {
-      return data.keys().hasOnly(['name', 'amount', 'durationValue', 'durationUnit', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['tenantId', 'name', 'amount', 'durationValue', 'durationUnit', 'createdAt', 'updatedAt']) &&
+        data.tenantId == getUserTenantId() &&
         isOptionalString(data.name) &&
         data.amount is number && data.amount > 0 &&
         data.durationValue is number && data.durationValue > 0 &&
@@ -183,7 +238,8 @@ service cloud.firestore {
     }
 
     function hasValidBundleUpdate(data) {
-      return data.keys().hasOnly(['name', 'amount', 'durationValue', 'durationUnit', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['tenantId', 'name', 'amount', 'durationValue', 'durationUnit', 'createdAt', 'updatedAt']) &&
+        data.tenantId == resource.data.tenantId &&
         isOptionalString(data.name) &&
         data.amount is number && data.amount > 0 &&
         data.durationValue is number && data.durationValue > 0 &&
@@ -193,18 +249,20 @@ service cloud.firestore {
     }
 
     match /bundles/{bundleId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
       allow create: if isSignedIn() && hasValidBundleSchema(request.resource.data);
-      allow update: if isSignedIn() && hasValidBundleUpdate(request.resource.data);
-      allow delete: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.tenantId == getUserTenantId() &&
+        hasValidBundleUpdate(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.tenantId == getUserTenantId();
     }
 
     // Outbound SMS queue for the customer-facing 24h expiry reminder —
-    // written by check-expiry and consumed by the Termux sender script, both
-    // via a service account (bypasses these rules). Staff can view the queue
-    // for visibility, but never write to it directly.
+    // written by check-expiry and consumed by each tenant's Termux sender
+    // script, both via a service account (bypasses these rules). Staff can
+    // view their own tenant's queue for visibility, but never write to it
+    // directly.
     match /outboundSms/{smsId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
       allow write: if false;
     }
 
@@ -213,7 +271,7 @@ service cloud.firestore {
     // increment on the customer doc — lets Analytics query a date range
     // without a collection-group query over customers/*/activities.
     match /topups/{topupId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
       allow write: if false;
     }
 
