@@ -57,15 +57,6 @@ export async function getUsersWithTenants(): Promise<AdminUserRow[]> {
     tenantsById.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Tenant);
   });
 
-  // eslint-disable-next-line no-console
-  console.log(
-    "[DEBUG]",
-    JSON.stringify({
-      users: usersSnap.docs.map((d) => ({ id: d.id, tenantId: d.data().tenantId, email: d.data().email })),
-      tenants: tenantsSnap.docs.map((d) => ({ id: d.id, businessName: d.data().businessName, email: d.data().email })),
-    })
-  );
-
   const rows: AdminUserRow[] = [];
   for (const userDoc of usersSnap.docs) {
     const data = userDoc.data();

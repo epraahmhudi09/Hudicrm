@@ -1,18 +1,21 @@
-import { getAccessToken, getServiceAccount } from "./googleAuth.js";
+import { getAccessToken } from "./googleAuth.js";
 
 const IDENTITY_SCOPE = "https://www.googleapis.com/auth/identitytoolkit";
+const IDENTITY_BASE = "https://identitytoolkit.googleapis.com/v1";
 
 interface IdentityErrorBody {
   error?: { message?: string };
 }
 
-function projectBase(): string {
-  return `https://identitytoolkit.googleapis.com/v1/projects/${getServiceAccount().project_id}`;
-}
-
+// The identitytoolkit v1 accounts:* RPCs are the same ones the client SDK
+// uses (accounts:signUp, accounts:update, accounts:delete) — normally
+// authenticated with the public Web API key, but Google also accepts an
+// OAuth bearer token in its place, which runs them in "admin mode": no
+// idToken/session is minted, so creating or disabling another user here
+// never disturbs the caller's own signed-in session.
 async function adminFetch(path: string, body: Record<string, unknown>): Promise<Record<string, unknown>> {
   const token = await getAccessToken([IDENTITY_SCOPE]);
-  const res = await fetch(`${projectBase()}${path}`, {
+  const res = await fetch(`${IDENTITY_BASE}${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -53,7 +56,7 @@ export async function verifyIdToken(idToken: string): Promise<{ uid: string; ema
 
 /** Creates a new Firebase Auth user without affecting the caller's own session. */
 export async function createAuthUser(email: string, password: string): Promise<string> {
-  const json = await adminFetch("/accounts", { email, password, emailVerified: false });
+  const json = await adminFetch("/accounts:signUp", { email, password, returnSecureToken: false });
   const uid = json.localId as string | undefined;
   if (!uid) throw new Error("Identity Toolkit did not return a new user id");
   return uid;
