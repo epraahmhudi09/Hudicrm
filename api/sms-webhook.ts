@@ -1,5 +1,5 @@
-import { incrementFields, listCollection, setDocument, updateFields } from "./lib/firestoreRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { incrementFields, listCollection, setDocument, updateFields } from "./_lib/firestoreRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 import { bundleExpiryFor, parseEvcSms, type BundleTier, type DurationUnit } from "../src/utils/parseEvcSms.js";
 
 const DURATION_UNITS: DurationUnit[] = ["hours", "days", "months"];

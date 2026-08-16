@@ -1,7 +1,7 @@
-import { requirePlatformAdmin } from "./lib/adminAuth.js";
-import { deleteDocument, updateFields } from "./lib/firestoreRest.js";
-import { deleteAuthUser, setAuthUserDisabled } from "./lib/identityRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { requirePlatformAdmin } from "./_lib/adminAuth.js";
+import { deleteDocument, updateFields } from "./_lib/firestoreRest.js";
+import { deleteAuthUser, setAuthUserDisabled } from "./_lib/identityRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 interface ManageUserBody {
   action?: unknown;

@@ -1,5 +1,5 @@
-import { getDocument, listCollection, updateFields } from "./lib/firestoreRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { getDocument, listCollection, updateFields } from "./_lib/firestoreRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 /**
  * Called by a tenant's Termux phone right after termux-sms-send successfully

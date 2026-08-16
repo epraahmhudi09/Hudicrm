@@ -1,5 +1,5 @@
-import { listCollection, setDocument } from "./lib/firestoreRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { listCollection, setDocument } from "./_lib/firestoreRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 const AMOUNT_PATTERN = /^EVC top-up: \$(\d+(?:\.\d+)?) airtime/;
 

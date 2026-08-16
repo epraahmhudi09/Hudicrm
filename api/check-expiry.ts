@@ -1,6 +1,6 @@
-import { addDocument, listCollection, updateFields } from "./lib/firestoreRest.js";
-import { sendPushToTokens } from "./lib/fcmRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { addDocument, listCollection, updateFields } from "./_lib/firestoreRest.js";
+import { sendPushToTokens } from "./_lib/fcmRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 const ALERT_AFTER_MS = 24 * 60 * 60 * 1000;
 const ESCALATION_AFTER_MS = 48 * 60 * 60 * 1000;

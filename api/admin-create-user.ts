@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { requirePlatformAdmin } from "./lib/adminAuth.js";
-import { addDocument, setDocument } from "./lib/firestoreRest.js";
-import { createAuthUser } from "./lib/identityRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { requirePlatformAdmin } from "./_lib/adminAuth.js";
+import { addDocument, setDocument } from "./_lib/firestoreRest.js";
+import { createAuthUser } from "./_lib/identityRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 interface CreateUserBody {
   ownerName?: unknown;

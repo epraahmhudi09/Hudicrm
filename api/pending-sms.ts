@@ -1,5 +1,5 @@
-import { listCollection } from "./lib/firestoreRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+import { listCollection } from "./_lib/firestoreRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 /**
  * Polled by a tenant's Termux phone to find customer reminder SMS that

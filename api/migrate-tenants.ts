@@ -3,8 +3,8 @@ import {
   listCollection,
   setDocument,
   updateFields,
-} from "./lib/firestoreRest.js";
-import type { VercelRequest, VercelResponse } from "./lib/types.js";
+} from "./_lib/firestoreRest.js";
+import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 const BACKFILL_COLLECTIONS = ["customers", "bundles", "debtCustomers", "topups", "outboundSms"];
 
