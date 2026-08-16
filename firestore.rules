@@ -180,9 +180,15 @@ service cloud.firestore {
     // endpoints (checked server-side, not by these rules). Only platform
     // admins and that tenant's own signed-in users can read it (the tenant
     // reads their own token/URLs from their Settings page); only admin API
-    // endpoints (service account) write it.
+    // endpoints (service account) write it. list is split from get because
+    // Firestore's list rule engine has to prove the condition holds for
+    // every possible result up front — a per-document condition mixed into
+    // the same OR as a document-independent one (isPlatformAdmin()) isn't
+    // provable that way, so the unfiltered admin-page listing needs its own
+    // list rule containing only the document-independent check.
     match /tenants/{tenantId} {
-      allow read: if isPlatformAdmin() || (isSignedIn() && getUserTenantId() == tenantId);
+      allow get: if isPlatformAdmin() || (isSignedIn() && getUserTenantId() == tenantId);
+      allow list: if isPlatformAdmin();
       allow write: if false;
     }
 
