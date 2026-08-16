@@ -14,7 +14,7 @@ import {
 import { doc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { onDocSnapshotWithRetry } from "../utils/firestoreRetry";
-import { recordUnlock } from "../utils/biometricAuth";
+import { markSessionUnlocked, recordUnlock } from "../utils/biometricAuth";
 
 interface AuthContextValue {
   user: User | null;
@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
     recordUnlock(credential.user.uid);
+    markSessionUnlocked(credential.user.uid);
   };
 
   const logout = async () => {

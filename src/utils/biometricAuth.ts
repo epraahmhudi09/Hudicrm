@@ -51,6 +51,24 @@ export function isUnlockStillValid(uid: string): boolean {
   return Date.now() - lastUnlock < threshold;
 }
 
+function sessionUnlockKey(uid: string): string {
+  return `hudicrm_biometric_session_unlocked_${uid}`;
+}
+
+// sessionStorage (unlike localStorage) survives a page refresh but is wiped
+// the moment the tab/window/installed-PWA instance actually closes — so
+// this is the precise signal for "still the same open session," separate
+// from the auto-lock grace period above (which governs re-opens after a
+// real close). A plain refresh while the app is open should never re-ask
+// for biometric, no matter what the auto-lock setting is.
+export function markSessionUnlocked(uid: string): void {
+  sessionStorage.setItem(sessionUnlockKey(uid), "1");
+}
+
+export function isSessionUnlocked(uid: string): boolean {
+  return sessionStorage.getItem(sessionUnlockKey(uid)) === "1";
+}
+
 // Cast to BufferSource: TS's lib.dom types crypto.getRandomValues's return
 // as Uint8Array<ArrayBufferLike> (permits SharedArrayBuffer), which isn't
 // assignable to BufferSource (Uint8Array<ArrayBuffer> only) — the value
@@ -136,4 +154,5 @@ export function disableBiometric(uid: string): void {
   localStorage.removeItem(storageKey(uid));
   localStorage.removeItem(autoLockKey(uid));
   localStorage.removeItem(lastUnlockKey(uid));
+  sessionStorage.removeItem(sessionUnlockKey(uid));
 }

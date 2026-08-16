@@ -42,26 +42,35 @@ function withRetry<TSnapshot>(
   ) => Unsubscribe,
   onData: (snapshot: TSnapshot) => void,
   onError?: (error: Error) => void,
-  options: { retries?: number; retryDelayMs?: number } = {}
+  options: { retries?: number } = {}
 ): Unsubscribe {
-  const { retries = 4, retryDelayMs = 1500 } = options;
+  const { retries = 8 } = options;
   let unsubscribed = false;
-  let attemptsLeft = retries;
+  let attempt = 0;
   let currentUnsubscribe: Unsubscribe = () => {};
+
+  // Starts fast (so a one-off blip clears almost instantly) and backs off
+  // up to 3s a step, giving ~20s of total silent-retry budget by the last
+  // attempt — comfortable room for a slow mobile connection to finish
+  // attaching the auth token before anything is shown to the user.
+  function delayFor(attemptIndex: number): number {
+    return Math.min(500 * 2 ** attemptIndex, 3000);
+  }
 
   function subscribe() {
     currentUnsubscribe = subscribeOnce(
       (snapshot) => {
-        attemptsLeft = retries;
+        attempt = 0;
         onData(snapshot);
       },
       (error) => {
         if (unsubscribed) return;
-        if (attemptsLeft > 0) {
-          attemptsLeft--;
+        if (attempt < retries) {
+          const delay = delayFor(attempt);
+          attempt++;
           setTimeout(() => {
             if (!unsubscribed) subscribe();
-          }, retryDelayMs);
+          }, delay);
         } else {
           onError?.(error);
         }

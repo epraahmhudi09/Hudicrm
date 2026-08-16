@@ -1,7 +1,14 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Loader2, AlertTriangle, Bell, Fingerprint, X } from "lucide-react";
 import { useAuth, useTenantId } from "./context/AuthContext";
-import { isBiometricEnabled, isUnlockStillValid, recordUnlock, verifyBiometric } from "./utils/biometricAuth";
+import {
+  isBiometricEnabled,
+  isSessionUnlocked,
+  isUnlockStillValid,
+  markSessionUnlocked,
+  recordUnlock,
+  verifyBiometric,
+} from "./utils/biometricAuth";
 import { useLanguage } from "./context/LanguageContext";
 import LoginPage from "./components/auth/LoginPage";
 import Navbar from "./components/layout/Navbar";
@@ -398,6 +405,7 @@ function BiometricLockScreen({ uid, onUnlock }: { uid: string; onUnlock: () => v
     setChecking(false);
     if (ok) {
       recordUnlock(uid);
+      markSessionUnlocked(uid);
       onUnlock();
     } else {
       setFailed(true);
@@ -447,8 +455,14 @@ export default function App() {
   if (profileLoadFailed) return <ProfileLoadError />;
   if (!tenantId) return <AccountNotSetUp />;
 
+  // A plain refresh keeps the same tab/window session alive (sessionStorage
+  // survives it) — only a genuine close-and-reopen (or the auto-lock grace
+  // period expiring) should ever re-prompt for biometric.
   const needsBiometricUnlock =
-    !biometricUnlocked && isBiometricEnabled(user.uid) && !isUnlockStillValid(user.uid);
+    !biometricUnlocked &&
+    isBiometricEnabled(user.uid) &&
+    !isSessionUnlocked(user.uid) &&
+    !isUnlockStillValid(user.uid);
   if (needsBiometricUnlock) {
     return <BiometricLockScreen uid={user.uid} onUnlock={() => setBiometricUnlocked(true)} />;
   }
