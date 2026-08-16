@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CheckCircle2, Clock, Download, SquareTerminal, Smartphone } from "lucide-react";
+import { CheckCircle2, Clock, Download, PackageOpen, SquareTerminal, Smartphone } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useInstallPrompt } from "../../hooks/useInstallPrompt";
 
@@ -76,6 +76,13 @@ export default function DownloadAppsView() {
               <p className="text-xs text-ink-500">{t.downloadAppCrmManualHint}</p>
             )
           }
+        />
+
+        <AppCard
+          icon={<PackageOpen size={20} />}
+          title={t.downloadAppFdroidTitle}
+          description={t.downloadAppFdroidDesc}
+          action={<OpenLinkButton href="https://f-droid.org/" label={t.downloadOpen} />}
         />
 
         <AppCard

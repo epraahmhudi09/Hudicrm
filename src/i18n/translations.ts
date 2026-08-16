@@ -286,6 +286,8 @@ export interface Translations {
   downloadAppCrmDesc: string;
   downloadAppCrmInstalled: string;
   downloadAppCrmManualHint: string;
+  downloadAppFdroidTitle: string;
+  downloadAppFdroidDesc: string;
   downloadAppTermuxApiTitle: string;
   downloadAppTermuxApiDesc: string;
   downloadAppTermuxTitle: string;
@@ -631,10 +633,15 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppCrmInstalled: "Already installed on this device.",
     downloadAppCrmManualHint:
       "Not showing an install button? Android Chrome: tap ⋮ then \"Install app\". iPhone Safari: tap Share then \"Add to Home Screen\".",
+    downloadAppFdroidTitle: "F-Droid",
+    downloadAppFdroidDesc:
+      "App store needed to install Termux and Termux:API below (they're not on Google Play). Install this first.",
     downloadAppTermuxApiTitle: "Termux:API",
-    downloadAppTermuxApiDesc: "Lets Termux read and send SMS — required for the EVC top-up forwarder.",
+    downloadAppTermuxApiDesc:
+      "Lets Termux read and send SMS — required for the EVC top-up forwarder. Opens its F-Droid page; install F-Droid first.",
     downloadAppTermuxTitle: "Termux",
-    downloadAppTermuxDesc: "Terminal app that runs the forwarder script on the phone receiving EVC SMS.",
+    downloadAppTermuxDesc:
+      "Terminal app that runs the forwarder script on the phone receiving EVC SMS. Opens its F-Droid page; install F-Droid first.",
     downloadAppCronJobTitle: "Cron-job.org",
     downloadAppCronJobDesc: "Free scheduler that triggers the 24h/48h reminder checks automatically.",
     downloadOpen: "Open",
@@ -981,10 +988,15 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppCrmInstalled: "Horey ayaa loogu rakibay device-kan.",
     downloadAppCrmManualHint:
       "Install button ma soo bixin? Android Chrome: taabo ⋮ kadib \"Install app\". iPhone Safari: taabo Share kadib \"Add to Home Screen\".",
+    downloadAppFdroidTitle: "F-Droid",
+    downloadAppFdroidDesc:
+      "App store loo baahan yahay si aad u rakibto Termux iyo Termux:API ee hoose (kuma jiraan Google Play). Marka hore kan rakib.",
     downloadAppTermuxApiTitle: "Termux:API",
-    downloadAppTermuxApiDesc: "Wuxuu u oggolaadaa Termux inuu akhriyo oo diro SMS — waa lagama maarmaan forwarder-ka EVC top-up.",
+    downloadAppTermuxApiDesc:
+      "Wuxuu u oggolaadaa Termux inuu akhriyo oo diro SMS — waa lagama maarmaan forwarder-ka EVC top-up. Wuxuu furayaa bogga F-Droid; marka hore rakib F-Droid.",
     downloadAppTermuxTitle: "Termux",
-    downloadAppTermuxDesc: "App terminal ah oo ku shaqaynaya script-ka forwarder-ka taleefanka helaya SMS-ka EVC.",
+    downloadAppTermuxDesc:
+      "App terminal ah oo ku shaqaynaya script-ka forwarder-ka taleefanka helaya SMS-ka EVC. Wuxuu furayaa bogga F-Droid; marka hore rakib F-Droid.",
     downloadAppCronJobTitle: "Cron-job.org",
     downloadAppCronJobDesc: "Scheduler bilaash ah oo si toos ah u kiciya hubinta xasuusinta 24h/48h.",
     downloadOpen: "Fur",
