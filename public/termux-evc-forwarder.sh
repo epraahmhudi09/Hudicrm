@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 #
-# Hudi CRM - EVC SMS forwarder + reminder sender for Termux.
+# HD CRM - EVC SMS forwarder + reminder sender for Termux.
 #
 # Two jobs, both on the same poll loop:
 #   1. Inbound: watches the SMS inbox for messages from the EVC Plus sender
@@ -33,7 +33,7 @@ if [ -f "$STATE_FILE" ]; then
     last_id="$(cat "$STATE_FILE")"
 fi
 
-echo "Hudi CRM EVC forwarder starting. Watching sender '$SENDER', last_id=$last_id"
+echo "HD CRM EVC forwarder starting. Watching sender '$SENDER', last_id=$last_id"
 
 termux-wake-lock
 

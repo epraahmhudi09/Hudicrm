@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  Download,
   Loader2,
   Plus,
   PlayCircle,
@@ -145,6 +146,14 @@ function AddUserModal({
                 <CopyRow label="mark-sms-sent" value={result.urls.markSmsSent} />
               </div>
             </div>
+            <a
+              href="/termux-evc-forwarder.sh"
+              download
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 bg-white px-4 py-2.5 text-sm font-medium text-ink-700 transition hover:bg-ink-100"
+            >
+              <Download size={14} />
+              {t.downloadForwarderScriptLabel}
+            </a>
             <button
               onClick={onClose}
               className="w-full rounded-lg bg-amtel-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amtel-700"

@@ -342,6 +342,7 @@ export interface Translations {
   userCreatedSubtitle: string;
   webhookTokenLabel: string;
   webhookUrlsLabel: string;
+  downloadForwarderScriptLabel: string;
   copyToClipboard: string;
   copied: string;
   usersEmptyTitle: string;
@@ -715,6 +716,7 @@ export const translations: Record<"en" | "so", Translations> = {
       "Share these with them so they can set up their own SMS automation (Termux + cron-job.org).",
     webhookTokenLabel: "Webhook token",
     webhookUrlsLabel: "Endpoint URLs",
+    downloadForwarderScriptLabel: "Download forwarder script (.sh)",
     copyToClipboard: "Copy",
     copied: "Copied",
     usersEmptyTitle: "No users yet",
@@ -1092,6 +1094,7 @@ export const translations: Record<"en" | "so", Translations> = {
       "La wadaag kuwan si uu u qabsado automation-kiisa SMS (Termux + cron-job.org).",
     webhookTokenLabel: "Webhook token-ka",
     webhookUrlsLabel: "URL-yada Endpoint-ka",
+    downloadForwarderScriptLabel: "Soo deji script-ka (.sh)",
     copyToClipboard: "Koobi",
     copied: "Waa la koobiyay",
     usersEmptyTitle: "Weli isticmaale lama darin",

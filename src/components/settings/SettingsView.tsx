@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   Copy,
+  Download,
   Fingerprint,
   Languages,
   Loader2,
@@ -281,6 +282,14 @@ function SmsAutomationCard() {
           <CopyRow label="sms-webhook" value={`${origin}/api/sms-webhook`} />
           <CopyRow label="pending-sms" value={`${origin}/api/pending-sms`} />
           <CopyRow label="mark-sms-sent" value={`${origin}/api/mark-sms-sent`} />
+          <a
+            href="/termux-evc-forwarder.sh"
+            download
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 bg-white px-4 py-2.5 text-sm font-medium text-ink-700 transition hover:bg-ink-100"
+          >
+            <Download size={14} />
+            {t.downloadForwarderScriptLabel}
+          </a>
         </div>
       )}
     </SettingsCard>
