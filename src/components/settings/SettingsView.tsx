@@ -230,7 +230,7 @@ export default function SettingsView() {
       </div>
 
       <SettingsCard title={t.editProfileTitle}>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           <div className="relative shrink-0">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-ink-100 text-ink-400">
               {displayedAvatar ? (
@@ -253,11 +253,11 @@ export default function SettingsView() {
               />
             </label>
           </div>
-          <form onSubmit={handleSaveName} className="flex-1 space-y-1.5">
+          <form onSubmit={handleSaveName} className="w-full flex-1 space-y-1.5">
             <label htmlFor="displayName" className="block text-sm font-medium text-ink-700">
               {t.displayName}
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 id="displayName"
                 type="text"
@@ -269,7 +269,7 @@ export default function SettingsView() {
               <button
                 type="submit"
                 disabled={nameStatus === "saving" || !name.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-amtel-600 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-amtel-600 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60 sm:justify-start"
               >
                 {nameStatus === "saving" && <Loader2 size={14} className="animate-spin" />}
                 {t.save}

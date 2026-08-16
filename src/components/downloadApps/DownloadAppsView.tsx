@@ -1,7 +1,24 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { CheckCircle2, Clock, Download, PackageOpen, SquareTerminal, Smartphone } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useInstallPrompt } from "../../hooks/useInstallPrompt";
+import type { Translations } from "../../i18n/translations";
+
+type Platform = "ios" | "android" | "desktop";
+
+function detectPlatform(): Platform {
+  if (typeof navigator === "undefined") return "desktop";
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) return "ios";
+  if (/Android/.test(ua)) return "android";
+  return "desktop";
+}
+
+function installStepsFor(platform: Platform, t: Translations): string[] {
+  if (platform === "ios") return [t.installStepIosShare, t.installStepIosAdd, t.installStepIosConfirm];
+  if (platform === "android") return [t.installStepAndroidMenu, t.installStepAndroidInstall];
+  return [t.installStepDesktopIcon, t.installStepDesktopInstall];
+}
 
 function AppCard({
   icon,
@@ -28,6 +45,21 @@ function AppCard({
   );
 }
 
+function InstallSteps({ steps }: { steps: string[] }) {
+  return (
+    <ol className="space-y-2">
+      {steps.map((step, index) => (
+        <li key={index} className="flex items-start gap-2.5 text-sm text-ink-700">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amtel-50 text-[11px] font-semibold text-amtel-700">
+            {index + 1}
+          </span>
+          {step}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function OpenLinkButton({ href, label }: { href: string; label: string }) {
   return (
     <a
@@ -45,6 +77,8 @@ function OpenLinkButton({ href, label }: { href: string; label: string }) {
 export default function DownloadAppsView() {
   const { t } = useLanguage();
   const { canInstall, installed, promptInstall } = useInstallPrompt();
+  const platform = useMemo(detectPlatform, []);
+  const steps = useMemo(() => installStepsFor(platform, t), [platform, t]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -60,20 +94,28 @@ export default function DownloadAppsView() {
           description={t.downloadAppCrmDesc}
           action={
             installed ? (
-              <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                <CheckCircle2 size={13} />
+              <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                <CheckCircle2 size={15} />
                 {t.downloadAppCrmInstalled}
               </p>
-            ) : canInstall ? (
-              <button
-                onClick={promptInstall}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amtel-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amtel-700"
-              >
-                <Download size={13} />
-                {t.installApp}
-              </button>
             ) : (
-              <p className="text-xs text-ink-500">{t.downloadAppCrmManualHint}</p>
+              <div className="space-y-3">
+                {canInstall && (
+                  <button
+                    onClick={promptInstall}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amtel-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amtel-700"
+                  >
+                    <Download size={13} />
+                    {t.installApp}
+                  </button>
+                )}
+                <div className="rounded-lg border border-ink-100 bg-ink-100/40 p-3">
+                  {!canInstall && (
+                    <p className="mb-2 text-xs font-medium text-ink-500">{t.installManualLabel}</p>
+                  )}
+                  <InstallSteps steps={steps} />
+                </div>
+              </div>
             )
           }
         />

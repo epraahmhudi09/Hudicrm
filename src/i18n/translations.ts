@@ -285,7 +285,14 @@ export interface Translations {
   downloadAppCrmTitle: string;
   downloadAppCrmDesc: string;
   downloadAppCrmInstalled: string;
-  downloadAppCrmManualHint: string;
+  installManualLabel: string;
+  installStepIosShare: string;
+  installStepIosAdd: string;
+  installStepIosConfirm: string;
+  installStepAndroidMenu: string;
+  installStepAndroidInstall: string;
+  installStepDesktopIcon: string;
+  installStepDesktopInstall: string;
   downloadAppFdroidTitle: string;
   downloadAppFdroidDesc: string;
   downloadAppTermuxApiTitle: string;
@@ -631,8 +638,14 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppCrmTitle: "Hudi CRM App",
     downloadAppCrmDesc: "Install this CRM on your device for quick, full-screen access.",
     downloadAppCrmInstalled: "Already installed on this device.",
-    downloadAppCrmManualHint:
-      "Not showing an install button? Android Chrome: tap ⋮ then \"Install app\". iPhone Safari: tap Share then \"Add to Home Screen\".",
+    installManualLabel: "How to install",
+    installStepIosShare: "Tap the Share icon in Safari's toolbar.",
+    installStepIosAdd: "Scroll down and tap \"Add to Home Screen\".",
+    installStepIosConfirm: "Tap \"Add\" in the top-right corner.",
+    installStepAndroidMenu: "Tap the ⋮ menu in the top-right corner.",
+    installStepAndroidInstall: "Tap \"Install app\" (or \"Add to Home screen\"), then confirm.",
+    installStepDesktopIcon: "Click the install icon (⊕) in the address bar, or open the ⋮ menu.",
+    installStepDesktopInstall: "Click \"Install Hudi CRM\", then confirm.",
     downloadAppFdroidTitle: "F-Droid",
     downloadAppFdroidDesc:
       "App store needed to install Termux and Termux:API below (they're not on Google Play). Install this first.",
@@ -986,8 +999,14 @@ export const translations: Record<"en" | "so", Translations> = {
     downloadAppCrmTitle: "Hudi CRM App",
     downloadAppCrmDesc: "Ku rakib CRM-kan taleefankaaga si aad ugu geli dhaqso oo shaashad buuxa ah.",
     downloadAppCrmInstalled: "Horey ayaa loogu rakibay device-kan.",
-    downloadAppCrmManualHint:
-      "Install button ma soo bixin? Android Chrome: taabo ⋮ kadib \"Install app\". iPhone Safari: taabo Share kadib \"Add to Home Screen\".",
+    installManualLabel: "Sida loo rakibo",
+    installStepIosShare: "Taabo calaamadda Share ee toolbar-ka Safari.",
+    installStepIosAdd: "Hoos u dhaadhac oo taabo \"Add to Home Screen\".",
+    installStepIosConfirm: "Taabo \"Add\" ee geeska sare ee midig.",
+    installStepAndroidMenu: "Taabo menu-ga ⋮ ee geeska sare ee midig.",
+    installStepAndroidInstall: "Taabo \"Install app\" (ama \"Add to Home screen\"), kadibna xaqiiji.",
+    installStepDesktopIcon: "Riix icon-ka install-ka (⊕) ee address bar-ka, ama fur menu-ga ⋮.",
+    installStepDesktopInstall: "Riix \"Install Hudi CRM\", kadibna xaqiiji.",
     downloadAppFdroidTitle: "F-Droid",
     downloadAppFdroidDesc:
       "App store loo baahan yahay si aad u rakibto Termux iyo Termux:API ee hoose (kuma jiraan Google Play). Marka hore kan rakib.",
