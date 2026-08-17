@@ -1,4 +1,4 @@
-import { getDocument, listCollection, updateFields } from "./_lib/firestoreRest.js";
+import { getDocument, queryEqual, updateFields } from "./_lib/firestoreRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
 /**
@@ -21,10 +21,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const providedToken =
       (req.query.token as string | undefined) ?? (req.headers["x-webhook-token"] as string | undefined);
 
-    const tenants = await listCollection("tenants");
-    const tenant = providedToken
-      ? tenants.find((t) => t.webhookToken === providedToken && t.active !== false)
-      : undefined;
+    const tenantMatches = providedToken
+      ? await queryEqual("tenants", { webhookToken: providedToken })
+      : [];
+    const tenant = tenantMatches.find((t) => t.active !== false);
 
     if (!tenant) {
       res.status(401).json({ ok: false, error: "unauthorized" });

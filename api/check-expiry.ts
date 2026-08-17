@@ -1,4 +1,4 @@
-import { addDocument, listCollection, updateFields } from "./_lib/firestoreRest.js";
+import { addDocument, listCollection, queryEqual, updateFields } from "./_lib/firestoreRest.js";
 import { sendPushToTokens } from "./_lib/fcmRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
@@ -41,24 +41,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const alertCutoff = now - ALERT_AFTER_MS;
     const escalationCutoff = now - ESCALATION_AFTER_MS;
 
-    // Fetched once and grouped in memory rather than queried per-tenant —
-    // a tenantId-equality + bundleExpiry-range compound query would need a
-    // composite index, which isn't provisionable here, and these
-    // collections are small enough that a full scan per run is fine.
-    const [allTenants, allCustomers, allUsers] = await Promise.all([
-      listCollection("tenants"),
-      listCollection("customers"),
-      listCollection("users"),
-    ]);
+    // Tenants list stays a full scan (handful of docs, cheap); customers and
+    // users are queried per-tenant instead of scanning those collections in
+    // full — a tenantId-equality + bundleExpiry-range compound query would
+    // need a composite index, which isn't provisionable here, but a plain
+    // tenantId-equality query needs none and avoids paying for every other
+    // tenant's documents on every run.
+    const allTenants = await listCollection("tenants");
 
     const results = [];
 
     for (const tenant of allTenants) {
       if (tenant.active === false) continue;
 
-      const customers = allCustomers.filter((c) => c.tenantId === tenant.id);
-      const tokens = allUsers
-        .filter((u) => u.tenantId === tenant.id)
+      const [customers, tenantUsers] = await Promise.all([
+        queryEqual("customers", { tenantId: tenant.id }),
+        queryEqual("users", { tenantId: tenant.id }),
+      ]);
+      const tokens = tenantUsers
         .map((u) => u.fcmToken as string | undefined)
         .filter((t): t is string => Boolean(t));
 

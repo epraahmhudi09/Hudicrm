@@ -1,4 +1,4 @@
-import { incrementFields, listCollection, setDocument, updateFields } from "./_lib/firestoreRest.js";
+import { incrementFields, queryEqual, setDocument, updateFields } from "./_lib/firestoreRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 import { bundleExpiryFor, parseEvcSms, type BundleTier, type DurationUnit } from "../src/utils/parseEvcSms.js";
 
@@ -14,10 +14,9 @@ interface RegisteredBundle extends BundleTier {
 
 /** Reads a tenant's staff-managed bundle tiers, skipping any malformed docs. */
 async function loadBundles(tenantId: string): Promise<RegisteredBundle[]> {
-  const docs = await listCollection("bundles");
+  const docs = await queryEqual("bundles", { tenantId });
   const bundles: RegisteredBundle[] = [];
   for (const doc of docs) {
-    if (doc.tenantId !== tenantId) continue;
     const amount = Number(doc.amount);
     const durationValue = Number(doc.durationValue);
     if (Number.isFinite(amount) && Number.isFinite(durationValue) && isDurationUnit(doc.durationUnit)) {
@@ -34,8 +33,8 @@ interface Tenant {
 
 /** Resolves a per-tenant webhook token (from the tenants collection) to its tenantId, or null if unrecognized/inactive. */
 async function resolveTenant(token: string): Promise<Tenant | null> {
-  const tenants = await listCollection("tenants");
-  const match = tenants.find((t) => t.webhookToken === token && t.active !== false);
+  const matches = await queryEqual("tenants", { webhookToken: token });
+  const match = matches.find((t) => t.active !== false);
   return match ? { id: match.id, webhookToken: String(match.webhookToken) } : null;
 }
 
@@ -97,11 +96,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const normalizedTarget = normalizePhone(transaction.phone);
-    const [allCustomers, bundles] = await Promise.all([
-      listCollection("customers"),
+    const [customers, bundles] = await Promise.all([
+      queryEqual("customers", { tenantId: tenant.id }),
       loadBundles(tenant.id),
     ]);
-    const customers = allCustomers.filter((c) => c.tenantId === tenant.id);
     const match = customers.find(
       (c) =>
         normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||

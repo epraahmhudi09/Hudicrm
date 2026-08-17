@@ -107,6 +107,48 @@ export async function listCollection(collectionPath: string): Promise<FirestoreD
   return results;
 }
 
+/**
+ * Runs a structured query filtering a collection by one or more equality
+ * checks (ANDed together — Firestore serves pure-equality compound filters
+ * off the automatic single-field indexes, no composite index needed). Use
+ * this instead of listCollection()+JS filter whenever the field(s) are
+ * known ahead of time — it's the difference between paying for a read per
+ * document in the WHOLE collection vs. just the matching ones, which matters
+ * a lot for collections polled every few seconds (e.g. outboundSms).
+ */
+export async function queryEqual(
+  collectionId: string,
+  filters: Record<string, unknown>
+): Promise<FirestoreDoc[]> {
+  const fieldFilters = Object.entries(filters).map(([fieldPath, value]) => ({
+    fieldFilter: {
+      field: { fieldPath },
+      op: "EQUAL",
+      value: encodeValue(value),
+    },
+  }));
+
+  const where =
+    fieldFilters.length === 1
+      ? fieldFilters[0]
+      : { compositeFilter: { op: "AND", filters: fieldFilters } };
+
+  const res = await authFetch(`${base()}:runQuery`, {
+    method: "POST",
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId }],
+        where,
+      },
+    }),
+  });
+
+  const json = (await res.json()) as Array<{
+    document?: { name: string; fields?: Record<string, FirestoreValue> };
+  }>;
+  return json.filter((r) => r.document).map((r) => decodeDocument(r.document!));
+}
+
 /** Runs a structured query with a single field filter against a collection. */
 export async function queryLessThanOrEqual(
   collectionId: string,
