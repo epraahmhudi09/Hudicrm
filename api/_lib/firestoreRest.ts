@@ -149,24 +149,39 @@ export async function queryEqual(
   return json.filter((r) => r.document).map((r) => decodeDocument(r.document!));
 }
 
-/** Runs a structured query with a single field filter against a collection. */
-export async function queryLessThanOrEqual(
+/**
+ * Runs a structured query combining equality filter(s) with a
+ * less-than-or-equal filter on a different field — e.g. "this tenant's
+ * customers whose bundleExpiry has already passed a cutoff". Unlike
+ * queryEqual, this needs a composite index (the equality field(s) plus the
+ * range field, all ascending) — Firestore rejects the query with a
+ * FAILED_PRECONDITION until one exists, so callers should be ready for this
+ * to throw on a fresh collection.
+ */
+export async function queryEqualWithRange(
   collectionId: string,
-  fieldPath: string,
-  value: Date
+  equalityFilters: Record<string, unknown>,
+  range: { fieldPath: string; lessThanOrEqual: Date }
 ): Promise<FirestoreDoc[]> {
+  const filters = [
+    ...Object.entries(equalityFilters).map(([fieldPath, value]) => ({
+      fieldFilter: { field: { fieldPath }, op: "EQUAL", value: encodeValue(value) },
+    })),
+    {
+      fieldFilter: {
+        field: { fieldPath: range.fieldPath },
+        op: "LESS_THAN_OR_EQUAL",
+        value: encodeValue(range.lessThanOrEqual),
+      },
+    },
+  ];
+
   const res = await authFetch(`${base()}:runQuery`, {
     method: "POST",
     body: JSON.stringify({
       structuredQuery: {
         from: [{ collectionId }],
-        where: {
-          fieldFilter: {
-            field: { fieldPath },
-            op: "LESS_THAN_OR_EQUAL",
-            value: encodeValue(value),
-          },
-        },
+        where: { compositeFilter: { op: "AND", filters } },
       },
     }),
   });

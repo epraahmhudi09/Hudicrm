@@ -1,4 +1,11 @@
-import { addDocument, listCollection, queryEqual, updateFields } from "./_lib/firestoreRest.js";
+import {
+  addDocument,
+  listCollection,
+  queryEqual,
+  queryEqualWithRange,
+  updateFields,
+  type FirestoreDoc,
+} from "./_lib/firestoreRest.js";
 import { sendPushToTokens } from "./_lib/fcmRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
 
@@ -9,6 +16,34 @@ function customerSmsText(name: string, supportPhone: string, supportPhoneBackup:
   const phones = [supportPhone, supportPhoneBackup].filter((p) => p.trim()).join("/");
   const contactSuffix = phones ? ` Laxiriir = ${phones}` : "";
   return `Macmiil ${name} Waykaa dhacday Xirmadii Internate ka Ahayd ee Kuugu Jirtay Fadlan Si aad U cusboonaysiiso${contactSuffix}`;
+}
+
+/**
+ * Every overdue customer for this tenant (bundleExpiry <= alertCutoff — the
+ * 48h escalation cutoff is a subset of this, so one query covers both).
+ * Tries the indexed tenantId+bundleExpiry query first, which costs one read
+ * per *overdue* customer instead of one per customer total — the difference
+ * that lets this run on a tight schedule without burning through the daily
+ * quota. Firestore rejects that query until its composite index has been
+ * created (Firebase Console -> Firestore -> Indexes), so until then — or if
+ * it's ever removed — this falls back to the full per-tenant scan, which is
+ * slower but always correct.
+ */
+async function loadOverdueCustomers(tenantId: string, alertCutoff: number): Promise<FirestoreDoc[]> {
+  try {
+    return await queryEqualWithRange(
+      "customers",
+      { tenantId },
+      { fieldPath: "bundleExpiry", lessThanOrEqual: new Date(alertCutoff) }
+    );
+  } catch (err) {
+    console.error("check-expiry: composite query unavailable, falling back to full scan:", err);
+    const all = await queryEqual("customers", { tenantId });
+    return all.filter((doc) => {
+      const bundleExpiry = doc.bundleExpiry as Date | null;
+      return bundleExpiry && bundleExpiry.getTime() <= alertCutoff;
+    });
+  }
 }
 
 /**
@@ -42,11 +77,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const escalationCutoff = now - ESCALATION_AFTER_MS;
 
     // Tenants list stays a full scan (handful of docs, cheap); customers and
-    // users are queried per-tenant instead of scanning those collections in
-    // full — a tenantId-equality + bundleExpiry-range compound query would
-    // need a composite index, which isn't provisionable here, but a plain
-    // tenantId-equality query needs none and avoids paying for every other
-    // tenant's documents on every run.
+    // users are queried per-tenant (see loadOverdueCustomers above) instead
+    // of scanning those collections in full.
     const allTenants = await listCollection("tenants");
 
     const results = [];
@@ -54,18 +86,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const tenant of allTenants) {
       if (tenant.active === false) continue;
 
-      const [customers, tenantUsers] = await Promise.all([
-        queryEqual("customers", { tenantId: tenant.id }),
+      const [expired, tenantUsers] = await Promise.all([
+        loadOverdueCustomers(tenant.id, alertCutoff),
         queryEqual("users", { tenantId: tenant.id }),
       ]);
       const tokens = tenantUsers
         .map((u) => u.fcmToken as string | undefined)
         .filter((t): t is string => Boolean(t));
-
-      const expired = customers.filter((doc) => {
-        const bundleExpiry = doc.bundleExpiry as Date | null;
-        return bundleExpiry && bundleExpiry.getTime() <= alertCutoff;
-      });
 
       const dueForAlert = expired.filter((doc) => {
         const bundleExpiry = doc.bundleExpiry as Date | null;
