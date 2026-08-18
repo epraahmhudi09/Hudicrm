@@ -8,6 +8,7 @@ import {
   Package,
   PhoneCall,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   Users,
   Wallet,
@@ -26,6 +27,7 @@ export type AppView =
   | "analytics"
   | "smsReminders"
   | "escalations"
+  | "fraudAlerts"
   | "downloadApps"
   | "users"
   | "settings";
@@ -55,6 +57,7 @@ export default function Sidebar({
     { key: "expiredBundles", label: t.navExpiredBundles, icon: <CalendarX2 size={18} /> },
     { key: "smsReminders", label: t.navSmsReminders, icon: <MessageSquareText size={18} /> },
     { key: "escalations", label: t.navEscalations, icon: <PhoneCall size={18} /> },
+    { key: "fraudAlerts", label: t.navFraudAlerts, icon: <ShieldAlert size={18} /> },
     { key: "bundles", label: t.navBundles, icon: <Package size={18} /> },
     { key: "analytics", label: t.navAnalytics, icon: <BarChart3 size={18} /> },
     { key: "downloadApps", label: t.navDownloadApps, icon: <Download size={18} /> },

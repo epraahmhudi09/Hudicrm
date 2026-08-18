@@ -285,6 +285,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Suspicious top-ups (replayed transaction ID, an implausible balance,
+    // or an out-of-order timestamp) flagged by the SMS webhook (service
+    // account, bypasses these rules). Staff can view their own tenant's
+    // alerts and toggle `reviewed` once they've looked at one — nothing else
+    // about an alert is ever editable from the client.
+    match /fraudAlerts/{alertId} {
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
+      allow update: if isSignedIn() && resource.data.tenantId == getUserTenantId() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewed']) &&
+        request.resource.data.reviewed is bool;
+      allow create, delete: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

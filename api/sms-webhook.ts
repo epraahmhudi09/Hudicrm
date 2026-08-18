@@ -1,6 +1,29 @@
-import { incrementFields, queryEqual, setDocument, updateFields } from "./_lib/firestoreRest.js";
+import {
+  addDocument,
+  getDocument,
+  incrementFields,
+  queryEqual,
+  setDocument,
+  updateFields,
+} from "./_lib/firestoreRest.js";
+import { sendPushToTokens } from "./_lib/fcmRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
-import { bundleExpiryFor, parseEvcSms, type BundleTier, type DurationUnit } from "../src/utils/parseEvcSms.js";
+import {
+  bundleExpiryFor,
+  parseEvcSms,
+  type BundleTier,
+  type DurationUnit,
+  type EvcTopupTransaction,
+} from "../src/utils/parseEvcSms.js";
+
+// A real EVC "sell airtime" SMS should never report a balance higher than
+// the reseller's last known balance (a sale only draws it down) unless a
+// reload happened in between — that's plausible, so this isn't blocked, just
+// flagged for a human to glance at. Same for a transaction timestamped
+// meaningfully before the last one processed: SMS should arrive in order, so
+// a backdated one is more likely a replayed/tampered message than a real
+// out-of-order delivery.
+const BACKDATE_TOLERANCE_MS = 3 * 60 * 1000;
 
 const DURATION_UNITS: DurationUnit[] = ["hours", "days", "months"];
 
@@ -29,13 +52,50 @@ async function loadBundles(tenantId: string): Promise<RegisteredBundle[]> {
 interface Tenant {
   id: string;
   webhookToken: string;
+  lastKnownBalance?: number;
+  lastTransactionAt?: Date;
 }
 
 /** Resolves a per-tenant webhook token (from the tenants collection) to its tenantId, or null if unrecognized/inactive. */
 async function resolveTenant(token: string): Promise<Tenant | null> {
   const matches = await queryEqual("tenants", { webhookToken: token });
   const match = matches.find((t) => t.active !== false);
-  return match ? { id: match.id, webhookToken: String(match.webhookToken) } : null;
+  if (!match) return null;
+  return {
+    id: match.id,
+    webhookToken: String(match.webhookToken),
+    lastKnownBalance: typeof match.lastKnownBalance === "number" ? match.lastKnownBalance : undefined,
+    lastTransactionAt: match.lastTransactionAt instanceof Date ? match.lastTransactionAt : undefined,
+  };
+}
+
+/**
+ * Flags reasons a parsed transaction looks tampered with or replayed rather
+ * than a genuine, freshly-received EVC SMS. Never blocks the top-up from
+ * being applied — a false positive here just means an extra alert a human
+ * dismisses, whereas blocking on one risks silently dropping a real renewal.
+ */
+async function detectAnomalies(
+  tenant: Tenant,
+  transaction: EvcTopupTransaction
+): Promise<string[]> {
+  const reasons: string[] = [];
+
+  const existingTopup = await getDocument(`topups/evc-${transaction.transactionId}`);
+  if (existingTopup) reasons.push("duplicate_transaction");
+
+  if (typeof tenant.lastKnownBalance === "number" && transaction.newBalance > tenant.lastKnownBalance) {
+    reasons.push("balance_increased_after_sale");
+  }
+
+  if (
+    tenant.lastTransactionAt &&
+    transaction.occurredAt.getTime() < tenant.lastTransactionAt.getTime() - BACKDATE_TOLERANCE_MS
+  ) {
+    reasons.push("backdated_timestamp");
+  }
+
+  return reasons;
 }
 
 function normalizePhone(phone: string): string {
@@ -94,6 +154,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(200).json({ ok: true, matched: false, reason: "unrecognized_format" });
       return;
     }
+
+    const anomalyReasons = await detectAnomalies(tenant, transaction);
+    if (anomalyReasons.length > 0) {
+      await addDocument("fraudAlerts", {
+        tenantId: tenant.id,
+        transactionId: transaction.transactionId,
+        phone: transaction.phone,
+        amount: transaction.amount,
+        newBalance: transaction.newBalance,
+        reasons: anomalyReasons,
+        detectedAt: new Date(),
+        reviewed: false,
+      });
+
+      const tenantUsers = await queryEqual("users", { tenantId: tenant.id });
+      const tokens = tenantUsers
+        .map((u) => u.fcmToken as string | undefined)
+        .filter((t): t is string => Boolean(t));
+      if (tokens.length > 0) {
+        await sendPushToTokens(tokens, {
+          title: "⚠️ Suspicious top-up detected",
+          body: `$${transaction.amount.toFixed(2)} to ${transaction.phone} looked unusual — check Fraud Alerts.`,
+        }).catch(() => {});
+      }
+    }
+
+    // A genuine duplicate (the exact same transaction, resent) was already
+    // fully applied the first time — the alert above is logged, but redoing
+    // the customer match/writes below would just repeat identical work.
+    if (anomalyReasons.includes("duplicate_transaction")) {
+      res.status(200).json({ ok: true, matched: false, duplicate: true });
+      return;
+    }
+
+    await updateFields(`tenants/${tenant.id}`, {
+      lastKnownBalance: transaction.newBalance,
+      lastTransactionAt: transaction.occurredAt,
+    });
 
     const normalizedTarget = normalizePhone(transaction.phone);
     const [customers, bundles] = await Promise.all([

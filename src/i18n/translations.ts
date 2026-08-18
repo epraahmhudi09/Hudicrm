@@ -294,6 +294,20 @@ export interface Translations {
   escalationsEmptyTitle: string;
   escalationsEmptySubtitle: string;
 
+  navFraudAlerts: string;
+  fraudAlertsTitle: string;
+  fraudAlertsSubtitle: string;
+  fraudAlertsEmptyTitle: string;
+  fraudAlertsEmptySubtitle: string;
+  colPhone: string;
+  colAmount: string;
+  colDetectedAt: string;
+  colReason: string;
+  actionMarkReviewed: string;
+  fraudReasonDuplicateTransaction: string;
+  fraudReasonBalanceIncreasedAfterSale: string;
+  fraudReasonBackdatedTimestamp: string;
+
   navDownloadApps: string;
   downloadAppsTitle: string;
   downloadAppsSubtitle: string;
@@ -662,6 +676,21 @@ export const translations: Record<"en" | "so", Translations> = {
     colEscalatedAt: "Flagged At",
     escalationsEmptyTitle: "No escalations right now",
     escalationsEmptySubtitle: "Customers appear here once they're 48h+ overdue without renewing.",
+
+    navFraudAlerts: "Fraud Alerts",
+    fraudAlertsTitle: "Fraud Alerts",
+    fraudAlertsSubtitle:
+      "Top-ups that looked unusual — a replayed message, an implausible balance, or an out-of-order timestamp.",
+    fraudAlertsEmptyTitle: "No alerts right now",
+    fraudAlertsEmptySubtitle: "Suspicious top-ups will show up here automatically.",
+    colPhone: "Phone",
+    colAmount: "Amount",
+    colDetectedAt: "Detected At",
+    colReason: "Reason",
+    actionMarkReviewed: "Mark reviewed",
+    fraudReasonDuplicateTransaction: "Duplicate transaction",
+    fraudReasonBalanceIncreasedAfterSale: "Balance rose after a sale",
+    fraudReasonBackdatedTimestamp: "Backdated timestamp",
 
     navDownloadApps: "Download Apps",
     downloadAppsTitle: "Download Apps",
@@ -1040,6 +1069,21 @@ export const translations: Record<"en" | "so", Translations> = {
     escalationsEmptyTitle: "Hadda wicitaan lama baahna",
     escalationsEmptySubtitle:
       "Macaamiisha waxay halkan ka muuqan doonaan marka ay 48h+ ka dhacaan iyagoo aan cusboonaysiin.",
+
+    navFraudAlerts: "Digniinaha Khiyaanada",
+    fraudAlertsTitle: "Digniinaha Khiyaanada",
+    fraudAlertsSubtitle:
+      "Top-up-yo aan caadi ahayn — fariin la celceliyay, balance aan macquul ahayn, ama waqti khaldan.",
+    fraudAlertsEmptyTitle: "Hadda digniin lama baahna",
+    fraudAlertsEmptySubtitle: "Top-up-yada shakiga leh ayaa halkan si toos ah uga muuqan doona.",
+    colPhone: "Telefoonka",
+    colAmount: "Qadarka",
+    colDetectedAt: "Waqtiga la Ogaaday",
+    colReason: "Sababta",
+    actionMarkReviewed: "Calaamadi la eegay",
+    fraudReasonDuplicateTransaction: "Transaction la celceliyay",
+    fraudReasonBalanceIncreasedAfterSale: "Balance-ku wuu kordhay kadib iib",
+    fraudReasonBackdatedTimestamp: "Waqti dib-dhac ah",
 
     navDownloadApps: "Soo Deji Apps-ka",
     downloadAppsTitle: "Soo Deji Apps-ka",

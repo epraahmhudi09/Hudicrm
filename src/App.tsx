@@ -20,6 +20,7 @@ import BundlesView from "./components/bundles/BundlesView";
 import AnalyticsView from "./components/analytics/AnalyticsView";
 import SmsRemindersView from "./components/smsReminders/SmsRemindersView";
 import EscalationsView from "./components/escalations/EscalationsView";
+import FraudAlertsView from "./components/fraudAlerts/FraudAlertsView";
 import DownloadAppsView from "./components/downloadApps/DownloadAppsView";
 import UsersView from "./components/admin/UsersView";
 import DashboardView from "./components/dashboard/DashboardView";
@@ -285,6 +286,8 @@ function Dashboard() {
           <SmsRemindersView />
         ) : view === "escalations" ? (
           <EscalationsView />
+        ) : view === "fraudAlerts" ? (
+          <FraudAlertsView />
         ) : view === "bundles" ? (
           <BundlesView />
         ) : view === "downloadApps" ? (
