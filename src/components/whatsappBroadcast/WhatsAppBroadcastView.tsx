@@ -8,6 +8,7 @@ import {
   Send,
   Trash2,
   UploadCloud,
+  UserCheck,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTenantId } from "../../context/AuthContext";
@@ -17,9 +18,11 @@ import {
   getBroadcastContactsRealtime,
   markBroadcastContactSent,
 } from "../../services/broadcastContactService";
+import { getBundlesRealtime } from "../../services/bundleService";
 import { downloadBroadcastTemplate, parseBroadcastContactsFile } from "../../utils/broadcastImport";
-import { buildWhatsAppLink, fillTemplate } from "../../utils/whatsapp";
+import { buildWhatsAppLink, fillTemplate, isProspectPhone } from "../../utils/whatsapp";
 import type { BroadcastContact } from "../../types/broadcastContact";
+import type { Bundle } from "../../types/bundle";
 import ConfirmDialog from "../common/ConfirmDialog";
 
 const DEFAULT_MESSAGE = `Macmiil {{name}},
@@ -33,18 +36,34 @@ Macmiil, Shirkadu waxay samaysay *Qiimo Dhimis* dhanka xirmooyinka *Bulaal Unlim
 
 ...iyo Xirmooyin kale.
 
-Si aad ugu shubato ama aad xog dheeraad ah u hesho, la xiriir:
+Si aad ugu shubato ama aad xog dheeraad ah u hesho, wac ama WhatsApp la xiriir:
 717701253 / 907701253
 
 Macmiil, kusoo dhawoow adeeg ku qanciya.`;
+
+const DEFAULT_MESSAGE_PROSPECT = `Kusoo dhawoow *Shirkada Isgaarsiinta Amtel*.
+
+Waxaan samaysanay *Qiimo Dhimis* dhanka xirmooyinka *Bulaal Unlimited*:
+
+1: $0.5 = 60 Saacadood Aan Xadidnayn
+2: $2 = Asbuuc Aan Xadidnayn
+
+...iyo Xirmooyin kale.
+
+Si aad ugu shubato ama aad xog dheeraad ah u hesho, wac ama WhatsApp la xiriir:
+717701253 / 907701253
+
+Kusoo dhawoow adeeg ku qanciya.`;
 
 export default function WhatsAppBroadcastView() {
   const { t } = useLanguage();
   const tenantId = useTenantId();
   const [contacts, setContacts] = useState<BroadcastContact[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
+  const [prospectMessage, setProspectMessage] = useState(DEFAULT_MESSAGE_PROSPECT);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BroadcastContact | null>(null);
@@ -66,6 +85,11 @@ export default function WhatsAppBroadcastView() {
     return unsubscribe;
   }, [tenantId]);
 
+  useEffect(() => {
+    const unsubscribe = getBundlesRealtime(tenantId, setBundles);
+    return unsubscribe;
+  }, [tenantId]);
+
   const sentCount = useMemo(() => contacts.filter((c) => c.sentAt).length, [contacts]);
 
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -76,7 +100,7 @@ export default function WhatsAppBroadcastView() {
     setImportError(null);
     setImporting(true);
     try {
-      const rows = await parseBroadcastContactsFile(file);
+      const rows = await parseBroadcastContactsFile(file, bundles);
       if (rows.length === 0) {
         setImportError(t.broadcastImportNoRows);
         return;
@@ -90,7 +114,8 @@ export default function WhatsAppBroadcastView() {
   }
 
   function handleSend(contact: BroadcastContact) {
-    const link = buildWhatsAppLink(contact.phone, fillTemplate(message, contact.name));
+    const template = isProspectPhone(contact.mainPhone) ? prospectMessage : message;
+    const link = buildWhatsAppLink(contact.mainPhone, fillTemplate(template, contact.name));
     window.open(link, "_blank", "noopener,noreferrer");
     void markBroadcastContactSent(contact.id);
   }
@@ -113,17 +138,32 @@ export default function WhatsAppBroadcastView() {
         <p className="mt-0.5 text-sm text-ink-500">{t.broadcastSubtitle}</p>
       </div>
 
-      <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-sm">
-        <label className="mb-2 block text-sm font-semibold text-ink-900">
-          {t.broadcastMessageLabel}
-        </label>
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={11}
-          className="w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 font-mono text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
-        />
-        <p className="mt-1.5 text-xs text-ink-500">{t.broadcastMessageHint}</p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-sm">
+          <label className="mb-2 block text-sm font-semibold text-ink-900">
+            {t.broadcastMessageLabel}
+          </label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={11}
+            className="w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 font-mono text-xs outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+          />
+          <p className="mt-1.5 text-xs text-ink-500">{t.broadcastMessageHint}</p>
+        </div>
+
+        <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-sm">
+          <label className="mb-2 block text-sm font-semibold text-ink-900">
+            {t.broadcastProspectMessageLabel}
+          </label>
+          <textarea
+            value={prospectMessage}
+            onChange={(e) => setProspectMessage(e.target.value)}
+            rows={11}
+            className="w-full rounded-lg border border-ink-300 bg-white px-3 py-2.5 font-mono text-xs outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+          />
+          <p className="mt-1.5 text-xs text-ink-500">{t.broadcastProspectMessageHint}</p>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -193,18 +233,33 @@ export default function WhatsAppBroadcastView() {
                 {contacts.map((contact) => (
                   <tr key={contact.id} className="transition hover:bg-ink-100/40">
                     <td className="px-4 py-3 font-medium text-ink-900">{contact.name}</td>
-                    <td className="px-4 py-3 text-ink-700">{contact.phone}</td>
-                    <td className="px-4 py-3">
-                      {contact.sentAt ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                          <CheckCircle2 size={11} />
-                          {t.broadcastSent}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full border border-ink-200 bg-ink-100/60 px-2 py-0.5 text-[11px] font-semibold text-ink-500">
-                          {t.broadcastNotSent}
+                    <td className="px-4 py-3 text-ink-700">
+                      {contact.mainPhone}
+                      {isProspectPhone(contact.mainPhone) && (
+                        <span className="ml-1.5 inline-flex items-center rounded-full border border-ink-200 bg-ink-100/60 px-1.5 py-0.5 text-[10px] font-semibold text-ink-500">
+                          {t.broadcastProspectTag}
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {contact.sentAt ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                            <CheckCircle2 size={11} />
+                            {t.broadcastSent}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-ink-200 bg-ink-100/60 px-2 py-0.5 text-[11px] font-semibold text-ink-500">
+                            {t.broadcastNotSent}
+                          </span>
+                        )}
+                        {contact.convertedCustomerId && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amtel-200 bg-amtel-50 px-2 py-0.5 text-[11px] font-semibold text-amtel-700">
+                            <UserCheck size={11} />
+                            {t.broadcastConverted}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">

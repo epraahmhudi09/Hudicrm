@@ -300,23 +300,37 @@ service cloud.firestore {
 
     // One-off WhatsApp broadcast lists (e.g. a promo sent to prospects who
     // aren't customers yet) — click-to-chat via wa.me links, no API/service
-    // account involved, so unlike outboundSms/topups these are written
-    // directly by the client, same pattern as debtCustomers.
+    // account involved, so unlike outboundSms/topups these are created and
+    // marked-sent directly by the client, same pattern as debtCustomers.
+    // convertedCustomerId is the exception: only sms-webhook (service
+    // account, bypasses these rules) ever sets it, once a top-up from this
+    // contact's phone auto-registers them as a real customer — a client can
+    // never set it directly, only leave it unchanged.
     function hasValidBroadcastContactSchema(data) {
-      return data.keys().hasOnly(['tenantId', 'name', 'phone', 'sentAt', 'createdAt']) &&
+      return data.keys().hasOnly(
+          ['tenantId', 'name', 'mainPhone', 'backupPhone', 'bundleId', 'sentAt',
+           'convertedCustomerId', 'createdAt']) &&
         data.tenantId == getUserTenantId() &&
         isNonEmptyString(data.name) &&
-        isNonEmptyString(data.phone) &&
+        isNonEmptyString(data.mainPhone) &&
+        isOptionalString(data.backupPhone) &&
+        isValidBundleId(data.bundleId) &&
         (data.sentAt == null || data.sentAt is timestamp) &&
+        data.convertedCustomerId == null &&
         isValidCreatedAt(data.createdAt);
     }
 
     function hasValidBroadcastContactUpdate(data) {
-      return data.keys().hasOnly(['tenantId', 'name', 'phone', 'sentAt', 'createdAt']) &&
+      return data.keys().hasOnly(
+          ['tenantId', 'name', 'mainPhone', 'backupPhone', 'bundleId', 'sentAt',
+           'convertedCustomerId', 'createdAt']) &&
         data.tenantId == resource.data.tenantId &&
         isNonEmptyString(data.name) &&
-        isNonEmptyString(data.phone) &&
+        isNonEmptyString(data.mainPhone) &&
+        isOptionalString(data.backupPhone) &&
+        data.bundleId == resource.data.bundleId &&
         (data.sentAt == null || data.sentAt is timestamp) &&
+        data.convertedCustomerId == resource.data.convertedCustomerId &&
         data.createdAt == resource.data.createdAt;
     }
 

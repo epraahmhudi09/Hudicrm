@@ -21,7 +21,7 @@ const BATCH_CHUNK_SIZE = 450;
 
 export async function bulkAddBroadcastContacts(
   tenantId: string,
-  rows: Array<{ name: string; phone: string }>
+  rows: Array<{ name: string; mainPhone: string; backupPhone: string; bundleId: string | null }>
 ): Promise<{ successCount: number }> {
   let successCount = 0;
 
@@ -34,8 +34,11 @@ export async function bulkAddBroadcastContacts(
       batch.set(newDocRef, {
         tenantId,
         name: row.name,
-        phone: row.phone,
+        mainPhone: row.mainPhone,
+        backupPhone: row.backupPhone,
+        bundleId: row.bundleId,
         sentAt: null,
+        convertedCustomerId: null,
         createdAt: serverTimestamp(),
       });
     }

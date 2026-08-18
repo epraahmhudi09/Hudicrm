@@ -1,6 +1,16 @@
 const SOMALIA_COUNTRY_CODE = "252";
 
 /**
+ * Numbers whose Main Phone starts with 906 aren't confirmed customers yet
+ * (unlike the paired 907-series numbers) — greeting them by name or as
+ * "Macmiil" (customer) would be inaccurate, so callers should use a
+ * generic, non-personalized message variant for these.
+ */
+export function isProspectPhone(mainPhone: string): boolean {
+  return mainPhone.replace(/\D/g, "").slice(-9).startsWith("906");
+}
+
+/**
  * Converts a Somali phone number in any common local format (with/without a
  * leading 0, with/without the 252 country code, with spaces or dashes) into
  * the bare international-digits format wa.me requires. Takes the last 9

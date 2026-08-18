@@ -313,6 +313,10 @@ export interface Translations {
   broadcastSubtitle: string;
   broadcastMessageLabel: string;
   broadcastMessageHint: string;
+  broadcastProspectMessageLabel: string;
+  broadcastProspectMessageHint: string;
+  broadcastProspectTag: string;
+  broadcastConverted: string;
   broadcastProgress: (sent: number, total: number) => string;
   broadcastImportButton: string;
   broadcastImportNoRows: string;
@@ -714,8 +718,13 @@ export const translations: Record<"en" | "so", Translations> = {
     broadcastTitle: "WhatsApp Broadcast",
     broadcastSubtitle:
       "Send a one-off message to a list of contacts via WhatsApp — one tap per contact, no API or approval needed.",
-    broadcastMessageLabel: "Message",
+    broadcastMessageLabel: "Message (customers — 907-series numbers)",
     broadcastMessageHint: "Use {{name}} anywhere you want the contact's name filled in.",
+    broadcastProspectMessageLabel: "Message (prospects — 906-series numbers)",
+    broadcastProspectMessageHint:
+      "Used automatically for contacts whose Main Phone starts with 906 — no name/\"Customer\" greeting.",
+    broadcastProspectTag: "906",
+    broadcastConverted: "Now a customer",
     broadcastProgress: (sent, total) => `${sent} / ${total} sent`,
     broadcastImportButton: "Import Contacts",
     broadcastImportNoRows:
@@ -1127,8 +1136,13 @@ export const translations: Record<"en" | "so", Translations> = {
     broadcastTitle: "WhatsApp Xayeysiin",
     broadcastSubtitle:
       "Fariin hal-mar ah u dir liis contacts ah WhatsApp — hal-taabasho qof kasta, wax API ama ansixin ah looma baahna.",
-    broadcastMessageLabel: "Fariinta",
+    broadcastMessageLabel: "Fariinta (macaamiisha — numberada 907)",
     broadcastMessageHint: "Isticmaal {{name}} meel kasta oo aad rabto in magaca macmiilku ku beddelmo.",
+    broadcastProspectMessageLabel: "Fariinta (prospects — numberada 906)",
+    broadcastProspectMessageHint:
+      "Si otomaatig ah ayaa loo isticmaalayaa contacts-ka Main Phone-kooda ku bilaabma 906 — magac/\"Macmiil\" lama isticmaalo.",
+    broadcastProspectTag: "906",
+    broadcastConverted: "Hadda waa macmiil",
     broadcastProgress: (sent, total) => `${sent} / ${total} waa la diray`,
     broadcastImportButton: "Soo Deji Contacts",
     broadcastImportNoRows: "Safaf lama helin. Hubi in file-ku leeyahay column-ka Name iyo Phone.",

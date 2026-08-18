@@ -5,6 +5,7 @@ import {
   queryEqual,
   setDocument,
   updateFields,
+  type FirestoreDoc,
 } from "./_lib/firestoreRest.js";
 import { sendPushToTokens } from "./_lib/fcmRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
@@ -100,6 +101,55 @@ async function detectAnomalies(
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "").slice(-9);
+}
+
+/**
+ * A phone that doesn't match any existing customer might still be a known
+ * prospect — someone imported for a WhatsApp broadcast (see
+ * broadcastContacts) making their very first top-up. If so, promote them to
+ * a real customers/{id} doc on the spot, same as a manually-added customer,
+ * so this and every future top-up from them gets tracked normally.
+ */
+async function convertProspectIfKnown(
+  tenantId: string,
+  normalizedTarget: string
+): Promise<FirestoreDoc | null> {
+  const prospects = await queryEqual("broadcastContacts", { tenantId });
+  const prospect = prospects.find(
+    (p) =>
+      !p.convertedCustomerId &&
+      (normalizePhone(String(p.mainPhone ?? "")) === normalizedTarget ||
+        normalizePhone(String(p.backupPhone ?? "")) === normalizedTarget)
+  );
+  if (!prospect) return null;
+
+  const bundleId = typeof prospect.bundleId === "string" ? prospect.bundleId : null;
+  let bundleName = "General";
+  if (bundleId) {
+    const bundleDoc = await getDocument(`bundles/${bundleId}`);
+    if (bundleDoc && typeof bundleDoc.name === "string" && bundleDoc.name.trim()) {
+      bundleName = bundleDoc.name;
+    }
+  }
+
+  const now = new Date();
+  const customerId = await addDocument("customers", {
+    tenantId,
+    name: String(prospect.name ?? "Customer"),
+    mainPhone: String(prospect.mainPhone ?? ""),
+    backupPhone: String(prospect.backupPhone ?? ""),
+    bundle: bundleName,
+    status: "normal",
+    bundleExpiry: null,
+    totalTopupAmount: 0,
+    bundleId,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await updateFields(`broadcastContacts/${prospect.id}`, { convertedCustomerId: customerId });
+
+  return { id: customerId, name: prospect.name, bundleId } as FirestoreDoc;
 }
 
 function extractSmsText(body: unknown): string | null {
@@ -198,11 +248,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       queryEqual("customers", { tenantId: tenant.id }),
       loadBundles(tenant.id),
     ]);
-    const match = customers.find(
+    let match = customers.find(
       (c) =>
         normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
         normalizePhone(String(c.backupPhone ?? "")) === normalizedTarget
     );
+
+    if (!match) {
+      match = (await convertProspectIfKnown(tenant.id, normalizedTarget)) ?? undefined;
+    }
 
     if (!match) {
       res.status(200).json({ ok: true, matched: false, reason: "no_customer_match" });
