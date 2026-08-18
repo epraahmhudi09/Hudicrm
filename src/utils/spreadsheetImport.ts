@@ -71,7 +71,7 @@ function cellToPrimitive(value: ExcelJS.CellValue): string | Date {
   return String(value);
 }
 
-async function parseXlsx(buffer: ArrayBuffer): Promise<(string | Date)[][]> {
+export async function parseXlsx(buffer: ArrayBuffer): Promise<(string | Date)[][]> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
   const worksheet = workbook.worksheets[0];
@@ -85,7 +85,7 @@ async function parseXlsx(buffer: ArrayBuffer): Promise<(string | Date)[][]> {
   return table;
 }
 
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

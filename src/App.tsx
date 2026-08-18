@@ -46,6 +46,16 @@ import type { Customer, CustomerFilter, CustomerFormData } from "./types/custome
 
 const ImportCustomersModal = lazy(() => import("./components/customers/ImportCustomersModal"));
 const CustomerActivityModal = lazy(() => import("./components/customers/CustomerActivityModal"));
+// Lazy so exceljs (used for the contact-list import/template) stays out of
+// the main bundle — pulling it in statically pushed the app past the PWA
+// precache size limit.
+const WhatsAppBroadcastView = lazy(() => import("./components/whatsappBroadcast/WhatsAppBroadcastView"));
+
+const SuspensePageFallback = (
+  <div className="flex items-center justify-center rounded-xl border border-ink-100 bg-white py-20">
+    <Loader2 size={24} className="animate-spin text-amtel-600" />
+  </div>
+);
 
 const SuspenseModalFallback = (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50">
@@ -288,6 +298,10 @@ function Dashboard() {
           <EscalationsView />
         ) : view === "fraudAlerts" ? (
           <FraudAlertsView />
+        ) : view === "broadcast" ? (
+          <Suspense fallback={SuspensePageFallback}>
+            <WhatsAppBroadcastView />
+          </Suspense>
         ) : view === "bundles" ? (
           <BundlesView />
         ) : view === "downloadApps" ? (

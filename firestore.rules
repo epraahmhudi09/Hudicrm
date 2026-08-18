@@ -298,6 +298,36 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // One-off WhatsApp broadcast lists (e.g. a promo sent to prospects who
+    // aren't customers yet) — click-to-chat via wa.me links, no API/service
+    // account involved, so unlike outboundSms/topups these are written
+    // directly by the client, same pattern as debtCustomers.
+    function hasValidBroadcastContactSchema(data) {
+      return data.keys().hasOnly(['tenantId', 'name', 'phone', 'sentAt', 'createdAt']) &&
+        data.tenantId == getUserTenantId() &&
+        isNonEmptyString(data.name) &&
+        isNonEmptyString(data.phone) &&
+        (data.sentAt == null || data.sentAt is timestamp) &&
+        isValidCreatedAt(data.createdAt);
+    }
+
+    function hasValidBroadcastContactUpdate(data) {
+      return data.keys().hasOnly(['tenantId', 'name', 'phone', 'sentAt', 'createdAt']) &&
+        data.tenantId == resource.data.tenantId &&
+        isNonEmptyString(data.name) &&
+        isNonEmptyString(data.phone) &&
+        (data.sentAt == null || data.sentAt is timestamp) &&
+        data.createdAt == resource.data.createdAt;
+    }
+
+    match /broadcastContacts/{contactId} {
+      allow read: if isSignedIn() && resource.data.tenantId == getUserTenantId();
+      allow create: if isSignedIn() && hasValidBroadcastContactSchema(request.resource.data);
+      allow update: if isSignedIn() && resource.data.tenantId == getUserTenantId() &&
+        hasValidBroadcastContactUpdate(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.tenantId == getUserTenantId();
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

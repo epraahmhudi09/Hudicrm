@@ -308,6 +308,24 @@ export interface Translations {
   fraudReasonBalanceIncreasedAfterSale: string;
   fraudReasonBackdatedTimestamp: string;
 
+  navBroadcast: string;
+  broadcastTitle: string;
+  broadcastSubtitle: string;
+  broadcastMessageLabel: string;
+  broadcastMessageHint: string;
+  broadcastProgress: (sent: number, total: number) => string;
+  broadcastImportButton: string;
+  broadcastImportNoRows: string;
+  broadcastImportFailed: string;
+  broadcastEmptyTitle: string;
+  broadcastEmptySubtitle: string;
+  broadcastSent: string;
+  broadcastNotSent: string;
+  broadcastSendAction: string;
+  broadcastResend: string;
+  broadcastDeleteTitle: string;
+  broadcastDeleteMessage: (name: string) => string;
+
   navDownloadApps: string;
   downloadAppsTitle: string;
   downloadAppsSubtitle: string;
@@ -691,6 +709,26 @@ export const translations: Record<"en" | "so", Translations> = {
     fraudReasonDuplicateTransaction: "Duplicate transaction",
     fraudReasonBalanceIncreasedAfterSale: "Balance rose after a sale",
     fraudReasonBackdatedTimestamp: "Backdated timestamp",
+
+    navBroadcast: "WhatsApp Broadcast",
+    broadcastTitle: "WhatsApp Broadcast",
+    broadcastSubtitle:
+      "Send a one-off message to a list of contacts via WhatsApp — one tap per contact, no API or approval needed.",
+    broadcastMessageLabel: "Message",
+    broadcastMessageHint: "Use {{name}} anywhere you want the contact's name filled in.",
+    broadcastProgress: (sent, total) => `${sent} / ${total} sent`,
+    broadcastImportButton: "Import Contacts",
+    broadcastImportNoRows:
+      "No rows found. Make sure the file has Name and Phone columns.",
+    broadcastImportFailed: "Couldn't read that file. Try a .xlsx or .csv export.",
+    broadcastEmptyTitle: "No contacts yet",
+    broadcastEmptySubtitle: "Import a list (Name + Phone) to get started.",
+    broadcastSent: "Sent",
+    broadcastNotSent: "Not sent",
+    broadcastSendAction: "Send WhatsApp",
+    broadcastResend: "Resend",
+    broadcastDeleteTitle: "Remove contact?",
+    broadcastDeleteMessage: (name) => `This removes ${name} from the broadcast list.`,
 
     navDownloadApps: "Download Apps",
     downloadAppsTitle: "Download Apps",
@@ -1084,6 +1122,25 @@ export const translations: Record<"en" | "so", Translations> = {
     fraudReasonDuplicateTransaction: "Transaction la celceliyay",
     fraudReasonBalanceIncreasedAfterSale: "Balance-ku wuu kordhay kadib iib",
     fraudReasonBackdatedTimestamp: "Waqti dib-dhac ah",
+
+    navBroadcast: "WhatsApp Xayeysiin",
+    broadcastTitle: "WhatsApp Xayeysiin",
+    broadcastSubtitle:
+      "Fariin hal-mar ah u dir liis contacts ah WhatsApp — hal-taabasho qof kasta, wax API ama ansixin ah looma baahna.",
+    broadcastMessageLabel: "Fariinta",
+    broadcastMessageHint: "Isticmaal {{name}} meel kasta oo aad rabto in magaca macmiilku ku beddelmo.",
+    broadcastProgress: (sent, total) => `${sent} / ${total} waa la diray`,
+    broadcastImportButton: "Soo Deji Contacts",
+    broadcastImportNoRows: "Safaf lama helin. Hubi in file-ku leeyahay column-ka Name iyo Phone.",
+    broadcastImportFailed: "Ma akhriyi karin file-kaas. Isku day .xlsx ama .csv.",
+    broadcastEmptyTitle: "Weli contact lama darin",
+    broadcastEmptySubtitle: "Soo deji liis (Name + Phone) si aad u bilowdo.",
+    broadcastSent: "La diray",
+    broadcastNotSent: "Lama dirin",
+    broadcastSendAction: "WhatsApp u dir",
+    broadcastResend: "Mar kale dir",
+    broadcastDeleteTitle: "Ka saar contact-ka?",
+    broadcastDeleteMessage: (name) => `Tani waxay ka saarataa ${name} liiska xayeysiinta.`,
 
     navDownloadApps: "Soo Deji Apps-ka",
     downloadAppsTitle: "Soo Deji Apps-ka",
