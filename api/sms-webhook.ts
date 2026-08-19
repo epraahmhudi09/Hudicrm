@@ -104,6 +104,36 @@ function normalizePhone(phone: string): string {
 }
 
 /**
+ * Looks up a tenant's customer by phone via the normalized-phone fields
+ * (see customerService.ts) — two 2-field equality queries (tenantId +
+ * mainPhoneNormalized, tenantId + backupPhoneNormalized), each served off
+ * Firestore's automatic single-field indexes with no composite index
+ * needed, instead of reading every one of the tenant's customers on every
+ * single top-up.
+ */
+async function findCustomerByPhone(
+  tenantId: string,
+  normalizedTarget: string
+): Promise<FirestoreDoc | undefined> {
+  const [byMain, byBackup] = await Promise.all([
+    queryEqual("customers", { tenantId, mainPhoneNormalized: normalizedTarget }),
+    queryEqual("customers", { tenantId, backupPhoneNormalized: normalizedTarget }),
+  ]);
+  const targeted = byMain[0] ?? byBackup[0];
+  if (targeted) return targeted;
+
+  // Fallback for any customer the normalize-phones migration hasn't
+  // reached yet (or created through some other path without it) — costs a
+  // full scan, but only for a match the targeted lookup above missed.
+  const all = await queryEqual("customers", { tenantId });
+  return all.find(
+    (c) =>
+      normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
+      normalizePhone(String(c.backupPhone ?? "")) === normalizedTarget
+  );
+}
+
+/**
  * A phone that doesn't match any existing customer might still be a known
  * prospect — someone imported for a WhatsApp broadcast (see
  * broadcastContacts) making their very first top-up. If so, promote them to
@@ -132,12 +162,16 @@ async function convertProspectIfKnown(
     }
   }
 
+  const mainPhone = String(prospect.mainPhone ?? "");
+  const backupPhone = String(prospect.backupPhone ?? "");
   const now = new Date();
   const customerId = await addDocument("customers", {
     tenantId,
     name: String(prospect.name ?? "Customer"),
-    mainPhone: String(prospect.mainPhone ?? ""),
-    backupPhone: String(prospect.backupPhone ?? ""),
+    mainPhone,
+    backupPhone,
+    mainPhoneNormalized: normalizePhone(mainPhone),
+    backupPhoneNormalized: backupPhone ? normalizePhone(backupPhone) : "",
     bundle: bundleName,
     status: "normal",
     bundleExpiry: null,
@@ -244,15 +278,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const normalizedTarget = normalizePhone(transaction.phone);
-    const [customers, bundles] = await Promise.all([
-      queryEqual("customers", { tenantId: tenant.id }),
+    const [foundCustomer, bundles] = await Promise.all([
+      findCustomerByPhone(tenant.id, normalizedTarget),
       loadBundles(tenant.id),
     ]);
-    let match = customers.find(
-      (c) =>
-        normalizePhone(String(c.mainPhone ?? "")) === normalizedTarget ||
-        normalizePhone(String(c.backupPhone ?? "")) === normalizedTarget
-    );
+    let match = foundCustomer;
 
     if (!match) {
       match = (await convertProspectIfKnown(tenant.id, normalizedTarget)) ?? undefined;

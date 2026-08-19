@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { onQuerySnapshotWithRetry } from "../utils/firestoreRetry";
+import { normalizePhone } from "../utils/phone";
 import type {
   ActivityType,
   Customer,
@@ -38,6 +39,11 @@ function toFirestoreCustomerData(data: CustomerFormData) {
     ...rest,
     bundleExpiry: bundleExpiryToTimestamp(bundleExpiry),
     bundleId: bundleId || null,
+    // Lets the SMS webhook find who topped up with one targeted query
+    // (tenantId + this field) instead of reading every one of the
+    // tenant's customers and filtering in JS on every single top-up.
+    mainPhoneNormalized: normalizePhone(data.mainPhone),
+    backupPhoneNormalized: data.backupPhone ? normalizePhone(data.backupPhone) : "",
   };
 }
 

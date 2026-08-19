@@ -34,6 +34,15 @@ export interface Customer {
    * amount match.
    */
   bundleId?: string | null;
+  /**
+   * Last-9-digits normalized form of mainPhone/backupPhone (see
+   * utils/phone.ts normalizePhone), kept in sync on every write. Lets the
+   * SMS webhook look up who topped up with a single targeted query instead
+   * of reading every customer for the tenant — not meant to be read or
+   * displayed by the UI.
+   */
+  mainPhoneNormalized?: string;
+  backupPhoneNormalized?: string;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
 }

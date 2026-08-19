@@ -66,11 +66,22 @@ service cloud.firestore {
       return value == null || (value is string && value.size() > 0 && value.size() <= 200);
     }
 
+    // Last-9-digits normalized mirror of mainPhone/backupPhone, kept in sync
+    // by the client on every write (see customerService.ts) — lets the SMS
+    // webhook query directly for who topped up instead of reading every
+    // customer. Optional in the schema (not required on create/update)
+    // purely so existing documents the one-time backfill migration hasn't
+    // reached yet don't fail unrelated validation; once present it must be
+    // a plausible normalized number.
+    function isValidNormalizedPhone(value) {
+      return value is string && value.size() <= 9;
+    }
+
     function hasValidCustomerSchema(data) {
       return data.keys().hasOnly(
           ['tenantId', 'name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
            'lastExpiryAlertSentFor', 'last48hEscalationSentFor', 'totalTopupAmount', 'bundleId',
-           'createdAt', 'updatedAt']) &&
+           'mainPhoneNormalized', 'backupPhoneNormalized', 'createdAt', 'updatedAt']) &&
         data.tenantId == getUserTenantId() &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
@@ -80,6 +91,8 @@ service cloud.firestore {
         isValidBundleExpiry(data.bundleExpiry) &&
         isValidTopupAmount(data) &&
         (!('bundleId' in data) || isValidBundleId(data.bundleId)) &&
+        (!('mainPhoneNormalized' in data) || isValidNormalizedPhone(data.mainPhoneNormalized)) &&
+        (!('backupPhoneNormalized' in data) || isValidNormalizedPhone(data.backupPhoneNormalized)) &&
         isValidCreatedAt(data.createdAt) &&
         data.updatedAt == request.time;
     }
@@ -93,7 +106,7 @@ service cloud.firestore {
       return data.keys().hasOnly(
           ['tenantId', 'name', 'mainPhone', 'backupPhone', 'bundle', 'status', 'bundleExpiry',
            'lastExpiryAlertSentFor', 'last48hEscalationSentFor', 'totalTopupAmount', 'bundleId',
-           'createdAt', 'updatedAt']) &&
+           'mainPhoneNormalized', 'backupPhoneNormalized', 'createdAt', 'updatedAt']) &&
         data.tenantId == resource.data.tenantId &&
         isNonEmptyString(data.name) &&
         isNonEmptyString(data.mainPhone) &&
@@ -105,6 +118,8 @@ service cloud.firestore {
         (!('last48hEscalationSentFor' in data) || isValidBundleExpiry(data.last48hEscalationSentFor)) &&
         isValidTopupAmount(data) &&
         (!('bundleId' in data) || isValidBundleId(data.bundleId)) &&
+        (!('mainPhoneNormalized' in data) || isValidNormalizedPhone(data.mainPhoneNormalized)) &&
+        (!('backupPhoneNormalized' in data) || isValidNormalizedPhone(data.backupPhoneNormalized)) &&
         data.createdAt == resource.data.createdAt &&
         data.updatedAt == request.time;
     }
