@@ -27,6 +27,12 @@ SENDER="913"
 
 STATE_FILE="$HOME/.evc_forwarder_last_id"
 POLL_SECONDS=20
+# If the server starts failing (e.g. a quota outage), retrying every 20s
+# just keeps hammering it and burning through whatever budget is left the
+# moment it recovers. Back off exponentially instead — 20s, 40s, 80s...
+# capped here — and reset to POLL_SECONDS the instant a cycle succeeds
+# again.
+MAX_BACKOFF_SECONDS=300
 
 last_id=0
 if [ -f "$STATE_FILE" ]; then
@@ -37,7 +43,11 @@ echo "HD CRM EVC forwarder starting. Watching sender '$SENDER', last_id=$last_id
 
 termux-wake-lock
 
+consecutive_failed_cycles=0
+
 while true; do
+    cycle_ok=true
+
     messages="$(termux-sms-list -l 10 -t inbox 2>/dev/null)"
 
     if [ -n "$messages" ]; then
@@ -64,6 +74,8 @@ while true; do
                 if [ "$response" = "200" ]; then
                     last_id="$msg_id"
                     echo "$last_id" > "$STATE_FILE"
+                else
+                    cycle_ok=false
                 fi
             done
         fi
@@ -71,25 +83,51 @@ while true; do
 
     # --- Outbound: send any queued customer reminder SMS ---
     pending_response="$(curl -s "$PENDING_SMS_URL?token=$WEBHOOK_TOKEN")"
-    pending_count="$(echo "$pending_response" | jq '.pending | length' 2>/dev/null)"
+    pending_ok="$(echo "$pending_response" | jq -r '.ok' 2>/dev/null)"
 
-    if [ -n "${pending_count:-}" ] && [ "$pending_count" -gt 0 ] 2>/dev/null; then
-        for i in $(seq 0 $((pending_count - 1))); do
-            sms_id="$(echo "$pending_response" | jq -r ".pending[$i].id")"
-            sms_phone="$(echo "$pending_response" | jq -r ".pending[$i].phone")"
-            sms_message="$(echo "$pending_response" | jq -r ".pending[$i].message")"
+    if [ "$pending_ok" != "true" ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') pending-sms check failed: $pending_response"
+        cycle_ok=false
+    else
+        pending_count="$(echo "$pending_response" | jq '.pending | length' 2>/dev/null)"
 
-            if termux-sms-send -n "$sms_phone" "$sms_message"; then
-                mark_response="$(curl -s -o /dev/null -w "%{http_code}" \
-                    -X POST "$MARK_SENT_URL?token=$WEBHOOK_TOKEN" \
-                    -H "Content-Type: application/json" \
-                    -d "$(jq -n --arg id "$sms_id" '{id: $id}')")"
-                echo "$(date '+%Y-%m-%d %H:%M:%S') sent reminder sms to $sms_phone (id=$sms_id) -> marked HTTP $mark_response"
-            else
-                echo "$(date '+%Y-%m-%d %H:%M:%S') FAILED sending reminder sms to $sms_phone (id=$sms_id) — will retry next poll"
-            fi
-        done
+        if [ -n "${pending_count:-}" ] && [ "$pending_count" -gt 0 ] 2>/dev/null; then
+            for i in $(seq 0 $((pending_count - 1))); do
+                sms_id="$(echo "$pending_response" | jq -r ".pending[$i].id")"
+                sms_phone="$(echo "$pending_response" | jq -r ".pending[$i].phone")"
+                sms_message="$(echo "$pending_response" | jq -r ".pending[$i].message")"
+
+                if termux-sms-send -n "$sms_phone" "$sms_message"; then
+                    mark_response="$(curl -s -o /dev/null -w "%{http_code}" \
+                        -X POST "$MARK_SENT_URL?token=$WEBHOOK_TOKEN" \
+                        -H "Content-Type: application/json" \
+                        -d "$(jq -n --arg id "$sms_id" '{id: $id}')")"
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') sent reminder sms to $sms_phone (id=$sms_id) -> marked HTTP $mark_response"
+                    if [ "$mark_response" != "200" ]; then
+                        cycle_ok=false
+                    fi
+                else
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') FAILED sending reminder sms to $sms_phone (id=$sms_id) — will retry next poll"
+                fi
+            done
+        fi
     fi
 
-    sleep "$POLL_SECONDS"
+    if [ "$cycle_ok" = true ]; then
+        consecutive_failed_cycles=0
+        sleep_seconds="$POLL_SECONDS"
+    else
+        consecutive_failed_cycles=$((consecutive_failed_cycles + 1))
+        backoff_exponent=$consecutive_failed_cycles
+        if [ "$backoff_exponent" -gt 8 ]; then
+            backoff_exponent=8
+        fi
+        sleep_seconds=$((POLL_SECONDS * (2 ** backoff_exponent)))
+        if [ "$sleep_seconds" -gt "$MAX_BACKOFF_SECONDS" ]; then
+            sleep_seconds="$MAX_BACKOFF_SECONDS"
+        fi
+        echo "$(date '+%Y-%m-%d %H:%M:%S') cycle had failures (streak=$consecutive_failed_cycles) -> backing off ${sleep_seconds}s"
+    fi
+
+    sleep "$sleep_seconds"
 done
