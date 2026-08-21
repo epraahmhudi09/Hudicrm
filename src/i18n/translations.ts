@@ -322,6 +322,7 @@ export interface Translations {
   broadcastConverted: string;
   broadcastProgress: (sent: number, total: number) => string;
   broadcastImportButton: string;
+  broadcastImportSummary: (added: number, skipped: number) => string;
   broadcastImportNoRows: string;
   broadcastImportFailed: string;
   broadcastEmptyTitle: string;
@@ -735,6 +736,10 @@ export const translations: Record<"en" | "so", Translations> = {
     broadcastConverted: "Now a customer",
     broadcastProgress: (sent, total) => `${sent} / ${total} sent`,
     broadcastImportButton: "Import Contacts",
+    broadcastImportSummary: (added, skipped) =>
+      skipped > 0
+        ? `Added ${added} new contact${added === 1 ? "" : "s"} — skipped ${skipped} already a customer or already on this list.`
+        : `Added ${added} new contact${added === 1 ? "" : "s"}.`,
     broadcastImportNoRows:
       "No rows found. Make sure the file has Name and Phone columns.",
     broadcastImportFailed: "Couldn't read that file. Try a .xlsx or .csv export.",
@@ -1158,6 +1163,10 @@ export const translations: Record<"en" | "so", Translations> = {
     broadcastConverted: "Hadda waa macmiil",
     broadcastProgress: (sent, total) => `${sent} / ${total} waa la diray`,
     broadcastImportButton: "Soo Deji Contacts",
+    broadcastImportSummary: (added, skipped) =>
+      skipped > 0
+        ? `${added} contact oo cusub ayaa la daray — ${skipped} waa la booday maadaama ay horeba customer ahaayeen ama liiskan ku jireen.`
+        : `${added} contact oo cusub ayaa la daray.`,
     broadcastImportNoRows: "Safaf lama helin. Hubi in file-ku leeyahay column-ka Name iyo Phone.",
     broadcastImportFailed: "Ma akhriyi karin file-kaas. Isku day .xlsx ama .csv.",
     broadcastEmptyTitle: "Weli contact lama darin",

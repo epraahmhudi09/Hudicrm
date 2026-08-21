@@ -23,9 +23,10 @@ import {
   updateBroadcastContact,
 } from "../../services/broadcastContactService";
 import { getBundlesRealtime } from "../../services/bundleService";
+import { getCustomersOnce } from "../../services/customerService";
 import { downloadBroadcastTemplate, parseBroadcastContactsFile } from "../../utils/broadcastImport";
 import { buildWhatsAppLink, fillTemplate, isProspectPhone } from "../../utils/whatsapp";
-import { telHref } from "../../utils/phone";
+import { normalizePhone, telHref } from "../../utils/phone";
 import type { BroadcastContact } from "../../types/broadcastContact";
 import type { Bundle } from "../../types/bundle";
 import ConfirmDialog from "../common/ConfirmDialog";
@@ -173,6 +174,7 @@ export default function WhatsAppBroadcastView() {
   const [prospectMessage, setProspectMessage] = useState(DEFAULT_MESSAGE_PROSPECT);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importSummary, setImportSummary] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BroadcastContact | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [editTarget, setEditTarget] = useState<BroadcastContact | null>(null);
@@ -206,6 +208,7 @@ export default function WhatsAppBroadcastView() {
     if (!file) return;
 
     setImportError(null);
+    setImportSummary(null);
     setImporting(true);
     try {
       const rows = await parseBroadcastContactsFile(file, bundles);
@@ -213,7 +216,26 @@ export default function WhatsAppBroadcastView() {
         setImportError(t.broadcastImportNoRows);
         return;
       }
-      await bulkAddBroadcastContacts(tenantId, rows);
+
+      // Skip rows whose phone already belongs to a real customer or is
+      // already on this broadcast list — a raw source like a telecom
+      // recharge report has no idea who's already registered, so without
+      // this every re-upload would pile up duplicates.
+      const customers = await getCustomersOnce(tenantId);
+      const knownPhones = new Set<string>();
+      for (const c of customers) {
+        knownPhones.add(normalizePhone(c.mainPhone));
+        if (c.backupPhone) knownPhones.add(normalizePhone(c.backupPhone));
+      }
+      for (const c of contacts) {
+        knownPhones.add(normalizePhone(c.mainPhone));
+      }
+      const newRows = rows.filter((r) => !knownPhones.has(normalizePhone(r.mainPhone)));
+
+      if (newRows.length > 0) {
+        await bulkAddBroadcastContacts(tenantId, newRows);
+      }
+      setImportSummary(t.broadcastImportSummary(newRows.length, rows.length - newRows.length));
     } catch (err) {
       setImportError(err instanceof Error ? err.message : t.broadcastImportFailed);
     } finally {
@@ -305,6 +327,12 @@ export default function WhatsAppBroadcastView() {
       {importError && (
         <div className="rounded-lg border border-amtel-200 bg-amtel-50 px-3 py-2.5 text-sm text-amtel-700">
           {importError}
+        </div>
+      )}
+
+      {importSummary && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">
+          {importSummary}
         </div>
       )}
 

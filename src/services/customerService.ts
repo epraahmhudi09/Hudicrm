@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   orderBy,
   query,
   serverTimestamp,
@@ -90,6 +91,13 @@ export async function bulkAddCustomers(
   }
 
   return { successCount };
+}
+
+/** One-time (non-subscribed) fetch — for a single check like import de-duplication, not for keeping a page in sync. */
+export async function getCustomersOnce(tenantId: string): Promise<Customer[]> {
+  const q = query(customersRef, where("tenantId", "==", tenantId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })) as Customer[];
 }
 
 export function getCustomersRealtime(
