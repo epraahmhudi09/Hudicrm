@@ -75,6 +75,13 @@ export async function markBroadcastContactSent(id: string): Promise<void> {
   await updateDoc(doc(db, BROADCAST_CONTACTS_COLLECTION, id), { sentAt: serverTimestamp() });
 }
 
+export async function updateBroadcastContact(
+  id: string,
+  data: { name: string; mainPhone: string; backupPhone: string }
+): Promise<void> {
+  await updateDoc(doc(db, BROADCAST_CONTACTS_COLLECTION, id), data);
+}
+
 export async function deleteBroadcastContact(id: string): Promise<void> {
   await deleteDoc(doc(db, BROADCAST_CONTACTS_COLLECTION, id));
 }

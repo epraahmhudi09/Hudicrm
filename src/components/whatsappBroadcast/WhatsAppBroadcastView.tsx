@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
   Download,
   Loader2,
   MessageCircle,
+  Pencil,
+  Phone,
   Send,
   Trash2,
   UploadCloud,
   UserCheck,
+  X,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTenantId } from "../../context/AuthContext";
@@ -17,10 +20,12 @@ import {
   deleteBroadcastContact,
   getBroadcastContactsRealtime,
   markBroadcastContactSent,
+  updateBroadcastContact,
 } from "../../services/broadcastContactService";
 import { getBundlesRealtime } from "../../services/bundleService";
 import { downloadBroadcastTemplate, parseBroadcastContactsFile } from "../../utils/broadcastImport";
 import { buildWhatsAppLink, fillTemplate, isProspectPhone } from "../../utils/whatsapp";
+import { telHref } from "../../utils/phone";
 import type { BroadcastContact } from "../../types/broadcastContact";
 import type { Bundle } from "../../types/bundle";
 import ConfirmDialog from "../common/ConfirmDialog";
@@ -55,6 +60,108 @@ Si aad ugu shubato ama aad xog dheeraad ah u hesho, wac ama WhatsApp la xiriir:
 
 Kusoo dhawoow adeeg ku qanciya.`;
 
+function EditContactModal({
+  contact,
+  onClose,
+}: {
+  contact: BroadcastContact;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [name, setName] = useState(contact.name);
+  const [mainPhone, setMainPhone] = useState(contact.mainPhone);
+  const [backupPhone, setBackupPhone] = useState(contact.backupPhone);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateBroadcastContact(contact.id, { name, mainPhone, backupPhone });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-xl bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+          <h2 className="text-lg font-semibold text-ink-900">{t.broadcastEditTitle}</h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 px-5 py-5">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-ink-700">{t.fieldName}</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-ink-700">
+              {t.fieldMainPhone}
+            </label>
+            <input
+              type="text"
+              value={mainPhone}
+              onChange={(e) => setMainPhone(e.target.value)}
+              required
+              className="w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-ink-700">
+              {t.fieldBackupPhone}
+            </label>
+            <input
+              type="text"
+              value={backupPhone}
+              onChange={(e) => setBackupPhone(e.target.value)}
+              className="w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-amtel-500 focus:ring-2 focus:ring-amtel-500/20"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-lg px-3.5 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-100 disabled:opacity-60"
+            >
+              {t.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center gap-2 rounded-lg bg-amtel-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-amtel-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {t.save}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function WhatsAppBroadcastView() {
   const { t } = useLanguage();
   const tenantId = useTenantId();
@@ -68,6 +175,7 @@ export default function WhatsAppBroadcastView() {
   const [importError, setImportError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BroadcastContact | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editTarget, setEditTarget] = useState<BroadcastContact | null>(null);
 
   useEffect(() => {
     const unsubscribe = getBroadcastContactsRealtime(
@@ -270,6 +378,20 @@ export default function WhatsAppBroadcastView() {
                           <Send size={13} />
                           {contact.sentAt ? t.broadcastResend : t.broadcastSendAction}
                         </button>
+                        <a
+                          href={telHref(contact.mainPhone)}
+                          className="flex items-center gap-1.5 rounded-lg bg-amtel-600 p-1.5 text-white shadow-sm transition hover:bg-amtel-700"
+                          aria-label={t.actionCall}
+                        >
+                          <Phone size={14} />
+                        </a>
+                        <button
+                          onClick={() => setEditTarget(contact)}
+                          className="flex items-center gap-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+                          aria-label={t.edit}
+                        >
+                          <Pencil size={14} />
+                        </button>
                         <button
                           onClick={() => setDeleteTarget(contact)}
                           className="flex items-center gap-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-amtel-50 hover:text-amtel-600"
@@ -296,6 +418,10 @@ export default function WhatsAppBroadcastView() {
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+
+      {editTarget && (
+        <EditContactModal contact={editTarget} onClose={() => setEditTarget(null)} />
       )}
     </div>
   );

@@ -104,6 +104,7 @@ export interface Translations {
   deleteCustomerTitle: string;
   deleteCustomerMessage: (name: string) => string;
   delete: string;
+  edit: string;
 
   couldntLoadCustomers: string;
   couldntLoadTopups: string;
@@ -331,6 +332,7 @@ export interface Translations {
   broadcastResend: string;
   broadcastDeleteTitle: string;
   broadcastDeleteMessage: (name: string) => string;
+  broadcastEditTitle: string;
 
   navDownloadApps: string;
   downloadAppsTitle: string;
@@ -502,6 +504,7 @@ export const translations: Record<"en" | "so", Translations> = {
     deleteCustomerMessage: (name) =>
       `This will permanently remove "${name}" from your customer list. This action cannot be undone.`,
     delete: "Delete",
+    edit: "Edit",
 
     couldntLoadCustomers: "Couldn't load customers",
     couldntLoadTopups: "Couldn't load top-up data",
@@ -743,6 +746,7 @@ export const translations: Record<"en" | "so", Translations> = {
     broadcastResend: "Resend",
     broadcastDeleteTitle: "Remove contact?",
     broadcastDeleteMessage: (name) => `This removes ${name} from the broadcast list.`,
+    broadcastEditTitle: "Edit Contact",
 
     navDownloadApps: "Download Apps",
     downloadAppsTitle: "Download Apps",
@@ -920,6 +924,7 @@ export const translations: Record<"en" | "so", Translations> = {
     deleteCustomerMessage: (name) =>
       `Tan waxay si joogto ah uga saarayaa "${name}" liiska macaamiishaada. Ficilkan lama soo celin karo.`,
     delete: "Tirtir",
+    edit: "Wax ka beddel",
 
     couldntLoadCustomers: "Macaamiisha lama soo geli karin",
     couldntLoadTopups: "Xogta shubashada lama soo geli karin",
@@ -1163,6 +1168,7 @@ export const translations: Record<"en" | "so", Translations> = {
     broadcastResend: "Mar kale dir",
     broadcastDeleteTitle: "Ka saar contact-ka?",
     broadcastDeleteMessage: (name) => `Tani waxay ka saarataa ${name} liiska xayeysiinta.`,
+    broadcastEditTitle: "Wax ka Beddel Contact-ka",
 
     navDownloadApps: "Soo Deji Apps-ka",
     downloadAppsTitle: "Soo Deji Apps-ka",
