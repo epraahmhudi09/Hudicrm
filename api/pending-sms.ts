@@ -1,5 +1,23 @@
-import { queryEqual } from "./_lib/firestoreRest.js";
+import { queryEqual, queryEqualAndIsNull, type FirestoreDoc } from "./_lib/firestoreRest.js";
 import type { VercelRequest, VercelResponse } from "./_lib/types.js";
+
+/**
+ * Unsent outboundSms for this tenant. outboundSms never gets pruned — a
+ * doc sticks around forever once sent — so a plain tenantId scan (the old
+ * behavior) grows more expensive every day as history piles up, on a
+ * collection polled every minute. Tries the indexed tenantId+sentAt(null)
+ * query first; falls back to the full scan if Firestore hasn't been given
+ * a composite index for it (or ever loses one).
+ */
+async function loadUnsentOutboundSms(tenantId: string): Promise<FirestoreDoc[]> {
+  try {
+    return await queryEqualAndIsNull("outboundSms", { tenantId }, "sentAt");
+  } catch (err) {
+    console.error("pending-sms: indexed query unavailable, falling back to full scan:", err);
+    const all = await queryEqual("outboundSms", { tenantId });
+    return all.filter((doc) => !doc.sentAt);
+  }
+}
 
 /**
  * Polled by a tenant's Termux phone to find customer reminder SMS that
@@ -27,9 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const docs = await queryEqual("outboundSms", { tenantId: tenant.id });
+    const docs = await loadUnsentOutboundSms(tenant.id);
     const pending = docs
-      .filter((doc) => !doc.sentAt)
       .map((doc) => ({
         id: doc.id,
         phone: String(doc.phone ?? ""),

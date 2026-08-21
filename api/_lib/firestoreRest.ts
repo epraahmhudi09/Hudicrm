@@ -150,6 +150,45 @@ export async function queryEqual(
 }
 
 /**
+ * Runs a structured query combining equality filter(s) with an IS_NULL
+ * check on a different field — e.g. "this tenant's outboundSms that haven't
+ * been sent yet". Firestore rejects a plain EQUAL comparison against null
+ * (it needs the dedicated unaryFilter/IS_NULL op instead), which is why
+ * this isn't just another case of queryEqual. Composite index requirements
+ * for this kind of query are less predictable than pure-equality ones, so
+ * callers should be ready for this to throw and have a fallback.
+ */
+export async function queryEqualAndIsNull(
+  collectionId: string,
+  equalityFilters: Record<string, unknown>,
+  nullField: string
+): Promise<FirestoreDoc[]> {
+  const filters = [
+    ...Object.entries(equalityFilters).map(([fieldPath, value]) => ({
+      fieldFilter: { field: { fieldPath }, op: "EQUAL", value: encodeValue(value) },
+    })),
+    {
+      unaryFilter: { field: { fieldPath: nullField }, op: "IS_NULL" },
+    },
+  ];
+
+  const res = await authFetch(`${base()}:runQuery`, {
+    method: "POST",
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId }],
+        where: { compositeFilter: { op: "AND", filters } },
+      },
+    }),
+  });
+
+  const json = (await res.json()) as Array<{
+    document?: { name: string; fields?: Record<string, FirestoreValue> };
+  }>;
+  return json.filter((r) => r.document).map((r) => decodeDocument(r.document!));
+}
+
+/**
  * Runs a structured query combining equality filter(s) with a
  * less-than-or-equal filter on a different field — e.g. "this tenant's
  * customers whose bundleExpiry has already passed a cutoff". Unlike

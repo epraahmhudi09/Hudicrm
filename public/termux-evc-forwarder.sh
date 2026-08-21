@@ -26,16 +26,16 @@ WEBHOOK_TOKEN="REPLACE_WITH_YOUR_SMS_WEBHOOK_SECRET"
 SENDER="913"
 
 STATE_FILE="$HOME/.evc_forwarder_last_id"
-# 60s rather than 20s — this loop's read cost is dominated by how often it
-# runs, not by what each run costs, and Firestore's Spark plan has a hard
-# daily read cap with no way to pay past it. A top-up now shows up within a
-# minute instead of 20s, which nobody notices; tripling the poll interval
-# cuts this loop's share of the daily quota by roughly 3x.
-POLL_SECONDS=60
+# This loop's read cost is dominated by how often it runs, not by what each
+# run costs, and Firestore's Spark plan has a hard daily read cap with no
+# way to pay past it. 120s means a top-up shows up within 2 minutes instead
+# of 20s — unnoticeable for a business use case — while cutting this loop's
+# share of the daily quota to a sixth of the original 20s interval.
+POLL_SECONDS=120
 # If the server starts failing (e.g. a quota outage), retrying every
 # POLL_SECONDS just keeps hammering it and burning through whatever budget
-# is left the moment it recovers. Back off exponentially instead — 60s,
-# 120s, 240s... capped here — and reset to POLL_SECONDS the instant a cycle
+# is left the moment it recovers. Back off exponentially instead — 120s,
+# 240s, 300s (capped)... — and reset to POLL_SECONDS the instant a cycle
 # succeeds again.
 MAX_BACKOFF_SECONDS=300
 
