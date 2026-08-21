@@ -129,6 +129,25 @@ export async function updateCustomer(
   });
 }
 
+/**
+ * Clears a customer's expiry tracking (bundleExpiry + both alert
+ * timestamps) without touching anything else — for when the automation
+ * missed a real top-up (e.g. the Termux forwarder was down) and the
+ * customer is showing as overdue/escalated despite having actually paid.
+ * Removes them from SmsRemindersView and EscalationsView immediately, since
+ * both derive from bundleExpiry being set and in the past. Their next real
+ * top-up sets a fresh bundleExpiry normally.
+ */
+export async function clearOverdueStatus(id: string): Promise<void> {
+  const customerDoc = doc(db, CUSTOMERS_COLLECTION, id);
+  await updateDoc(customerDoc, {
+    bundleExpiry: null,
+    lastExpiryAlertSentFor: null,
+    last48hEscalationSentFor: null,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function toggleCustomerStatus(
   id: string,
   currentStatus: CustomerStatus

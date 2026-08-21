@@ -148,6 +148,8 @@ export interface Translations {
 
   actionHistory: string;
   actionCall: string;
+  clearOverdueTitle: string;
+  clearOverdueMessage: (name: string) => string;
   historyTitle: string;
   historyEmpty: string;
   addNote: string;
@@ -546,6 +548,9 @@ export const translations: Record<"en" | "so", Translations> = {
 
     actionHistory: "History",
     actionCall: "Call",
+    clearOverdueTitle: "Clear overdue status?",
+    clearOverdueMessage: (name) =>
+      `Removes ${name} from this list — use this when they've actually paid but the automation missed it (e.g. the forwarder was down). Clears their expiry tracking; their next real top-up sets a fresh one normally.`,
     historyTitle: "Customer History",
     historyEmpty: "No activity yet.",
     addNote: "Add Note",
@@ -961,6 +966,9 @@ export const translations: Record<"en" | "so", Translations> = {
 
     actionHistory: "Taariikhda",
     actionCall: "Wac",
+    clearOverdueTitle: "Ka saar xaaladda dhaqsan?",
+    clearOverdueMessage: (name) =>
+      `Waxay ka saarayaan ${name} liiskan — isticmaal marka ay dhab ahaan lacag bixiyeen laakiin automation-ku uu ka tagay (tusaale: forwarder-ku wuu joogsanaa). Waxay nadiifinaysaa tracking-ka expiry-gooda; top-up-kooda xiga si caadi ah ayuu mid cusub u dhigayaa.`,
     historyTitle: "Taariikhda Macmiilka",
     historyEmpty: "Weli wax dhaqdhaqaaq ah ma jiraan.",
     addNote: "Ku Dar Qoraal",

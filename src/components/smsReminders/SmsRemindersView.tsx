@@ -6,15 +6,17 @@ import {
   Loader2,
   MessageSquareText,
   Phone,
+  Trash2,
   X,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTenantId } from "../../context/AuthContext";
-import { getCustomersRealtime } from "../../services/customerService";
+import { clearOverdueStatus, getCustomersRealtime } from "../../services/customerService";
 import { getOutboundSmsForCustomer } from "../../services/outboundSmsService";
 import type { Customer } from "../../types/customer";
 import type { OutboundSms } from "../../types/outboundSms";
 import { telHref } from "../../utils/phone";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 function daysOverdue(bundleExpiry: Customer["bundleExpiry"]): number | null {
   if (!bundleExpiry) return null;
@@ -122,6 +124,8 @@ export default function SmsRemindersView() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
+  const [clearTarget, setClearTarget] = useState<Customer | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = getCustomersRealtime(
@@ -152,6 +156,17 @@ export default function SmsRemindersView() {
       }))
       .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime());
   }, [customers]);
+
+  async function handleConfirmClear() {
+    if (!clearTarget) return;
+    setClearing(true);
+    try {
+      await clearOverdueStatus(clearTarget.id);
+      setClearTarget(null);
+    } finally {
+      setClearing(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -220,7 +235,7 @@ export default function SmsRemindersView() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setViewingCustomer(customer)}
                           title={t.viewMessage}
@@ -228,6 +243,14 @@ export default function SmsRemindersView() {
                         >
                           <Eye size={13} />
                           {t.viewMessage}
+                        </button>
+                        <button
+                          onClick={() => setClearTarget(customer)}
+                          title={t.delete}
+                          className="flex items-center gap-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-amtel-50 hover:text-amtel-600"
+                          aria-label={t.delete}
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -244,6 +267,17 @@ export default function SmsRemindersView() {
           tenantId={tenantId}
           customer={viewingCustomer}
           onClose={() => setViewingCustomer(null)}
+        />
+      )}
+
+      {clearTarget && (
+        <ConfirmDialog
+          title={t.clearOverdueTitle}
+          message={t.clearOverdueMessage(clearTarget.name)}
+          confirmLabel={t.delete}
+          loading={clearing}
+          onConfirm={handleConfirmClear}
+          onCancel={() => setClearTarget(null)}
         />
       )}
     </div>

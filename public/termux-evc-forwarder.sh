@@ -53,7 +53,12 @@ consecutive_failed_cycles=0
 while true; do
     cycle_ok=true
 
-    messages="$(termux-sms-list -l 10 -t inbox 2>/dev/null)"
+    # 50 rather than 10 — if the forwarder is down for a while (a bad token,
+    # a quota outage), real top-up SMS pile up in the inbox unforwarded
+    # since last_id never advances past a failed one. A wider window means
+    # the next successful run catches up on the whole backlog in order
+    # instead of only ever seeing the most recent handful.
+    messages="$(termux-sms-list -l 50 -t inbox 2>/dev/null)"
 
     if [ -n "$messages" ]; then
         # Oldest-to-newest, only from the EVC sender, only ids newer than last_id.
